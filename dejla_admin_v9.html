@@ -372,7 +372,7 @@ setTimeout(function(){
   setTimeout(function(){s.style.display="none"; document.getElementById("login").style.display="flex";},550);
 },2200);
 
-// PIN LOGIN
+// PIN
 function ap(d){if(pin.length>=4)return; pin+=String(d); ud(); if(pin.length===4)setTimeout(cp,180);}
 function dp(){pin=pin.slice(0,-1); ud();}
 function ud(){for(var i=0;i<4;i++){var e=document.getElementById("p"+i); e.className="pd"+(i<pin.length?" on":"");}}
@@ -462,7 +462,7 @@ function startAutoCheck(){
   },10000);
 }
 
-// EMPLOYEES - 3 SECTIONS
+// EMPLOYEES
 function loadE(){
   document.getElementById("empList").innerHTML=ldHTML();
   Promise.all([
@@ -479,44 +479,67 @@ function loadE(){
     if(emps.length>40) emps=emps.slice(0,40);
     cachedEmps=emps;
     if(!emps.length){document.getElementById("empList").innerHTML='<div class="empty">لا يوجد موظفون</div>';return;}
-
-    // القسم 1: نشطون
     var active=emps.filter(function(e){return e.status==="نشط"&&e.name;});
-    // القسم 2: غير نشط (خارج القوة)
     var inactive=emps.filter(function(e){return e.status==="غير نشط"&&e.name;});
-    // القسم 3: فاضي
-    var empty=emps.filter(function(e){return !e.name;});
-
-    var html="";
-
-    // القسم 1
-    if(active.length){
-      html+='<div class="sdiv">✅ نشطون على القوة ('+active.length+')</div>';
-      active.forEach(function(e){html+=buildActiveCard(e,todayStatus[e.code],emps.indexOf(e));});
-    }
-
-    // القسم 2
-    if(inactive.length){
-      html+='<div class="sdiv">⚪ خارج القوة ('+inactive.length+')</div>';
-      inactive.forEach(function(e){html+=buildInactiveCard(e,emps.indexOf(e));});
-    }
-
-    // القسم 3
-    if(empty.length){
-      html+='<div class="sdiv">📭 أكواد فاضية ('+empty.length+')</div>';
-      empty.forEach(function(e){html+=buildEmptyCard(e.code);});
-    }
-
-    document.getElementById("empList").innerHTML=html;
+    renderEmpList(active, inactive, todayStatus, "");
   }).catch(function(){document.getElementById("empList").innerHTML='<div class="empty">تعذر التحميل</div>';});
 }
 
-// كارت الموظف النشط
+function renderEmpList(active, inactive, todayStatus, query){
+  var html="";
+  // Search bar
+  html+='<div style="position:relative;margin-bottom:12px;">';
+  html+='<input type="text" id="empSearch" value="'+query+'" oninput="searchEmps(this.value)" placeholder="🔍  بحث باسم أو كود..." style="width:100%;padding:11px 14px;border:2px solid var(--b3);border-radius:12px;font-family:Cairo,sans-serif;font-size:.88rem;outline:none;background:white;"/>';
+  html+='</div>';
+  
+  var filteredActive=active;
+  var filteredInactive=inactive;
+  if(query){
+    var q=query.toLowerCase();
+    filteredActive=active.filter(function(e){return e.name.toLowerCase().includes(q)||e.code.toLowerCase().includes(q);});
+    filteredInactive=inactive.filter(function(e){return e.name.toLowerCase().includes(q)||e.code.toLowerCase().includes(q);});
+  }
+
+  // القسم 1: نشطون
+  if(filteredActive.length){
+    html+='<div class="sdiv">✅ نشطون على القوة ('+filteredActive.length+')</div>';
+    filteredActive.forEach(function(e){html+=buildActiveCard(e,todayStatus[e.code],cachedEmps.indexOf(e));});
+  } else if(!query){
+    html+='<div class="sdiv">✅ نشطون على القوة (0)</div>';
+    html+='<div class="empty" style="margin-bottom:10px;">لا يوجد موظفون نشطون</div>';
+  }
+
+  // القسم 2: خارج القوة
+  if(filteredInactive.length){
+    html+='<div class="sdiv" style="margin-top:8px;">⚪ خارج القوة ('+filteredInactive.length+')</div>';
+    filteredInactive.forEach(function(e){html+=buildInactiveCard(e,cachedEmps.indexOf(e));});
+  }
+
+  if(query&&!filteredActive.length&&!filteredInactive.length){
+    html+='<div class="empty">لم يتم العثور على نتائج</div>';
+  }
+
+  document.getElementById("empList").innerHTML=html;
+  // Refocus search
+  if(query){
+    var el=document.getElementById("empSearch");
+    if(el){el.focus(); el.setSelectionRange(el.value.length,el.value.length);}
+  }
+}
+
+function searchEmps(q){
+  var emps=cachedEmps;
+  var active=emps.filter(function(e){return e.status==="نشط"&&e.name;});
+  var inactive=emps.filter(function(e){return e.status==="غير نشط"&&e.name;});
+  var recs=[]; // بدون تحديث الحضور وقت البحث
+  renderEmpList(active,inactive,{},q);
+}
+
+// كارت نشط
 function buildActiveCard(e,status,idx){
-  var avBg="background:var(--gl);color:var(--gd)";
   var badge=status==="in"?'<span class="badge bg">🟢 حاضر</span>':status==="out"?'<span class="badge br2">🔴 انصرف</span>':'<span class="badge bgray">⚪ غياب</span>';
   var h='<div class="emp-card"><div class="ec-head">';
-  h+='<div class="ec-av" style="'+avBg+'">'+e.name.charAt(0)+'</div>';
+  h+='<div class="ec-av" style="background:var(--gl);color:var(--gd);">'+e.name.charAt(0)+'</div>';
   h+='<div class="ec-info"><div class="ec-name">'+e.name+'</div><div class="ec-meta">'+e.code+'</div></div>'+badge+'</div>';
   h+='<div class="ec-body">';
   h+='<div><div class="ec-stat-lbl">الراتب</div><div class="ec-stat-val">'+(e.salary?Number(e.salary).toLocaleString()+" ج.م":"—")+'</div></div>';
@@ -532,7 +555,7 @@ function buildActiveCard(e,status,idx){
   return h;
 }
 
-// كارت الموظف خارج القوة
+// كارت غير نشط
 function buildInactiveCard(e,idx){
   var h='<div class="emp-card" style="opacity:.85;border-style:dashed;">';
   h+='<div class="ec-head">';
@@ -552,21 +575,7 @@ function buildInactiveCard(e,idx){
   return h;
 }
 
-// كارت فاضي
-function buildEmptyCard(code){
-  var s='<div class="emp-card empty-slot"><div class="ec-head">';
-  s+='<div class="ec-av" style="background:var(--b3);color:var(--m);font-size:.7rem;">'+code+'</div>';
-  s+='<div class="ec-info"><div class="ec-name" style="color:var(--m);">كارت فاضي</div><div class="ec-meta">'+code+' — جاهز لموظف جديد</div></div></div>';
-  s+='<div style="padding:10px 14px;"><button class="ec-add" data-code="'+code+'" onclick="goAddWithCode(this.dataset.code)">➕ إضافة موظف</button></div></div>';
-  return s;
-}
-
-function goAddWithCode(code){
-  sw(2,document.querySelectorAll(".ni")[2]);
-  toast("ℹ️","سيتم تعيين الكود "+code+" للموظف الجديد","");
-}
-
-// تفعيل موظف خارج القوة
+// تفعيل موظف
 function activateEmp(code){
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({action:"editEmployee",code:code,status:"نشط"})
@@ -610,17 +619,21 @@ function saveEdit(){
   }).catch(function(){btn.disabled=false; btn.textContent="حفظ التعديلات"; toast("❌","حدث خطأ","");});
 }
 
-// DELETE / DEACTIVATE
+// DEACTIVATE / DELETE
 function askDel(code,type){
   pendingDelCode=code;
   pendingDelType=type;
   document.getElementById("pinInput").value="";
   document.getElementById("pinErr").style.display="none";
-  // غير عنوان الـ modal حسب النوع
-  var title=type==="delete"?"🗑️ حذف نهائي":"🚫 إيقاف الموظف";
-  var sub=type==="delete"?"سيتم مسح كل بيانات الموظف نهائياً":"سيتم نقل الموظف لقسم خارج القوة";
-  document.getElementById("pinModal").querySelector(".ptitle").textContent=title;
-  document.getElementById("pinModal").querySelector(".psub").textContent=sub;
+  var ptitle=document.getElementById("pinModal").querySelector(".ptitle");
+  var psub=document.getElementById("pinModal").querySelector(".psub");
+  if(type==="delete"){
+    ptitle.textContent="🗑️ حذف نهائي";
+    psub.textContent="سيتم مسح كل بيانات الموظف نهائياً";
+  } else {
+    ptitle.textContent="🚫 إيقاف الموظف";
+    psub.textContent="سيتم نقل الموظف لقسم خارج القوة";
+  }
   document.getElementById("pinModal").classList.add("show");
   setTimeout(function(){document.getElementById("pinInput").focus();},150);
 }
@@ -636,29 +649,21 @@ function confirmDelete(){
   var type=pendingDelType;
   var btn=document.getElementById("delConfirmBtn");
   btn.disabled=true; btn.innerHTML='<span class="sp"></span>جاري...';
-  var payload;
-  if(type==="delete"){
-    // حذف نهائي - مسح كل البيانات
-    payload={action:"editEmployee",code:code,name:"",nationalId:"",salary:"",phone:"",status:"نشط"};
-  } else {
-    // إيقاف - غير نشط فقط
-    payload={action:"editEmployee",code:code,status:"غير نشط"};
-  }
+  var payload=type==="delete"
+    ? {action:"editEmployee",code:code,name:"",nationalId:"",salary:"",phone:"",status:"نشط"}
+    : {action:"editEmployee",code:code,status:"غير نشط"};
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
     body:JSON.stringify(payload)
   }).then(function(){
     btn.disabled=false; btn.textContent="تأكيد";
     closePinModal();
-    if(type==="delete"){
-      toast("✅","تم حذف بيانات الموظف نهائياً","الكارت فاضي وجاهز لموظف جديد");
-    } else {
-      toast("✅","تم إيقاف الموظف","يظهر الآن في قسم خارج القوة");
-    }
+    toast("✅",type==="delete"?"تم الحذف النهائي":"تم إيقاف الموظف",
+          type==="delete"?"الكارت فاضي وجاهز لموظف جديد":"يظهر الآن في قسم خارج القوة");
     setTimeout(function(){loadE();},1500);
   }).catch(function(){btn.disabled=false; btn.textContent="تأكيد"; toast("❌","حدث خطأ","");});
 }
 
-// SALARY REPORT
+// SALARY
 function openSalary(code,name){
   salEmpCode=code;
   var now=new Date();
