@@ -334,11 +334,43 @@ function sendLeave(){
 
 // ── SOUND ──
 function playSound(type){
+  // اهتزاز
   try{
-    var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();
-    o.connect(g);g.connect(c.destination);o.type="sine";
-    if(type==="in"){o.frequency.setValueAtTime(440,c.currentTime);o.frequency.setValueAtTime(554,c.currentTime+.1);o.frequency.setValueAtTime(659,c.currentTime+.2);g.gain.setValueAtTime(.4,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.6);o.start(c.currentTime);o.stop(c.currentTime+.6);}
-    else{o.frequency.setValueAtTime(659,c.currentTime);o.frequency.setValueAtTime(554,c.currentTime+.12);o.frequency.setValueAtTime(440,c.currentTime+.24);g.gain.setValueAtTime(.35,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+.5);o.start(c.currentTime);o.stop(c.currentTime+.5);}
+    if(navigator.vibrate){
+      navigator.vibrate(type==="in"?[80,40,80]:[120]);
+    }
+  }catch(e){}
+  // صوت ناعم
+  try{
+    var c=new(window.AudioContext||window.webkitAudioContext)();
+    // resume عشان iOS
+    if(c.state==="suspended")c.resume();
+    var o=c.createOscillator();
+    var g=c.createGain();
+    var comp=c.createDynamicsCompressor();
+    o.connect(g);g.connect(comp);comp.connect(c.destination);
+    o.type="sine";
+    if(type==="in"){
+      // نغمة صاعدة ناعمة - حضور
+      o.frequency.setValueAtTime(392,c.currentTime);
+      o.frequency.linearRampToValueAtTime(523,c.currentTime+.15);
+      o.frequency.linearRampToValueAtTime(659,c.currentTime+.3);
+      g.gain.setValueAtTime(0,c.currentTime);
+      g.gain.linearRampToValueAtTime(0.25,c.currentTime+.05);
+      g.gain.setValueAtTime(0.25,c.currentTime+.25);
+      g.gain.linearRampToValueAtTime(0,c.currentTime+.5);
+      o.start(c.currentTime);o.stop(c.currentTime+.5);
+    } else {
+      // نغمة هابطة ناعمة - انصراف
+      o.frequency.setValueAtTime(523,c.currentTime);
+      o.frequency.linearRampToValueAtTime(392,c.currentTime+.2);
+      o.frequency.linearRampToValueAtTime(330,c.currentTime+.4);
+      g.gain.setValueAtTime(0,c.currentTime);
+      g.gain.linearRampToValueAtTime(0.2,c.currentTime+.05);
+      g.gain.setValueAtTime(0.2,c.currentTime+.3);
+      g.gain.linearRampToValueAtTime(0,c.currentTime+.55);
+      o.start(c.currentTime);o.stop(c.currentTime+.55);
+    }
   }catch(e){}
 }
 
