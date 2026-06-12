@@ -477,6 +477,7 @@ function loadE(){
       if(r.action==="حضور") todayStatus[r.code]="in";
       if(r.action==="انصراف") todayStatus[r.code]="out";
     });
+    if(emps.length>40)emps=emps.slice(0,40);
     cachedEmps=emps;
     if(!emps.length){document.getElementById("empList").innerHTML='<div class="empty">لا يوجد موظفون</div>';return;}
     var active=emps.filter(function(e){return e.status==="نشط"&&e.name;});
@@ -637,7 +638,7 @@ function saveEmp(){
   var btn=document.getElementById("sb");
   btn.disabled=true; btn.innerHTML='جاري الحفظ <span class="sp"></span>';
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,branch:br,shift:sh,
+    body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,
       salary:document.getElementById("fsal").value,phone:document.getElementById("fph").value,
       status:document.getElementById("fst").value})
   }).then(function(){
