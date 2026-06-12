@@ -51,7 +51,7 @@ html,body{height:100%;font-family:"Cairo",sans-serif;background:var(--bg);color:
 .tc h2{color:var(--gd);font-size:.9rem;font-weight:900;}
 .tc small{color:var(--m);font-size:.62rem;}
 .xbtn{background:var(--rl);color:var(--r);border:none;border-radius:9px;padding:6px 10px;font-family:"Cairo",sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;}
-.cnt{flex:1;overflow-y:auto;padding:12px 12px calc(var(--nav)+8px);}
+.cnt{flex:1;overflow-y:auto;padding:12px 12px calc(var(--nav)+24px);}
 
 /* NAV */
 .bnav{height:var(--nav);background:white;display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;border-top:1.5px solid var(--b3);}
@@ -730,24 +730,43 @@ function clrF(){
 }
 
 // ATTENDANCE
+var allAttRecs=[];
 function loadA(){
   document.getElementById("al").innerHTML=ldHTML();
   fetch(URL+"?action=getAttendance").then(function(r){return r.json();})
   .then(function(data){
-    var recs=(data.records||[]).filter(function(r){
-      var a=r.action||""; return r.name&&(a==="حضور"||a==="انصراف");
-    }).slice(-60).reverse();
-    if(!recs.length){document.getElementById("al").innerHTML='<div class="empty">لا توجد سجلات</div>';return;}
-    var html="";
-    recs.forEach(function(r){
-      var isIn=r.action==="حضور";
-      html+='<div class="li">';
-      html+='<div class="av" style="'+(isIn?"background:var(--gl);color:var(--gd)":"background:var(--rl);color:var(--r)")+'">'+(isIn?"▲":"▼")+'</div>';
-      html+='<div class="lb"><div class="ln">'+r.name+'</div><div class="ls">'+r.branch+(r.timing?" · "+r.timing:"")+'</div></div>';
-      html+='<div class="lr"><span class="badge '+(isIn?"bg":"br2")+'">'+r.action+'</span><div style="font-size:.66rem;color:var(--m);margin-top:3px;">'+r.date+' '+(r.time||"").slice(0,5)+'</div></div></div>';
+    allAttRecs=(data.records||[]).filter(function(r){
+      var a=r.action||"";
+      return r.name&&(a==="حضور"||a==="انصراف");
     });
-    document.getElementById("al").innerHTML=html;
+    renderAtt("");
   }).catch(function(){document.getElementById("al").innerHTML='<div class="empty">تعذر التحميل</div>';});
+}
+function filterAtt(d){renderAtt(d);}
+function renderAtt(dateFilter){
+  var today=new Date().toLocaleDateString("en-CA");
+  var recs=dateFilter?allAttRecs.filter(function(r){return r.date===dateFilter;}):allAttRecs;
+  var sorted=recs.slice().reverse().slice(0,100);
+  var html="";
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+  html+='<input type="date" id="attDate" value="'+(dateFilter||"")+'" onchange="filterAtt(this.value)" style="flex:1;padding:9px 12px;border:2px solid var(--b3);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;outline:none;"/>';
+  html+='<button class="rb" onclick="filterAtt(\''+today+'\')">اليوم</button>';
+  html+='<button class="rb" onclick="filterAtt(\'\')">الكل</button>';
+  html+='</div>';
+  if(!sorted.length){document.getElementById("al").innerHTML=html+'<div class="empty">لا توجد سجلات</div>';return;}
+  html+='<div style="font-size:.72rem;color:var(--m);margin-bottom:8px;font-weight:600;">'+sorted.length+' سجل'+(dateFilter?" — "+dateFilter:"")+'</div>';
+  sorted.forEach(function(r){
+    var isIn=r.action==="حضور";
+    var avStyle=isIn?"background:var(--gl);color:var(--gd)":"background:var(--rl);color:var(--r)";
+    var avIcon=isIn?"▲":"▼";
+    var bdgClass=isIn?"bg":"br2";
+    html+='<div class="li">';
+    html+='<div class="av" style="'+avStyle+'">'+avIcon+'</div>';
+    html+='<div class="lb"><div class="ln">'+r.name+'</div><div class="ls">'+r.branch+(r.timing?" · "+r.timing:"")+'</div></div>';
+    html+='<div class="lr"><span class="badge '+bdgClass+'">'+r.action+'</span>';
+    html+='<div style="font-size:.66rem;color:var(--m);margin-top:3px;">'+r.date+' '+(r.time||"").slice(0,5)+'</div></div></div>';
+  });
+  document.getElementById("al").innerHTML=html;
 }
 
 // REQUESTS
