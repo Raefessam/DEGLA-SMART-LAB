@@ -365,14 +365,12 @@ html,body{height:100%;font-family:"Cairo",sans-serif;background:var(--bg);color:
 var PASS="1122", URL="https://script.google.com/macros/s/AKfycby1guPfRIcNbXHMzmpSIBDK-Ow6_vzbpeMEzwCBRkT86HT_LShQ3g27zlilkmhePi-X5A/exec";
 var pin="", soundOn=true, lastCount=0, cachedEmps=[], allReqs=[], pendingDelCode=null, salEmpCode=null;
 
-// SPLASH
 setTimeout(function(){
   var s=document.getElementById("splash");
   s.style.transition="opacity 0.5s"; s.style.opacity="0";
   setTimeout(function(){s.style.display="none"; document.getElementById("login").style.display="flex";},550);
 },2200);
 
-// PIN
 function ap(d){if(pin.length>=4)return; pin+=String(d); ud(); if(pin.length===4)setTimeout(cp,180);}
 function dp(){pin=pin.slice(0,-1); ud();}
 function ud(){for(var i=0;i<4;i++){var e=document.getElementById("p"+i); e.className="pd"+(i<pin.length?" on":"");}}
@@ -389,7 +387,6 @@ function cp(){
 }
 function lo(){document.getElementById("login").style.display="flex"; document.getElementById("app").style.display="none"; pin=""; ud();}
 
-// NAV
 function sw(n,el){
   document.querySelectorAll(".sec").forEach(function(s){s.classList.remove("on");});
   document.querySelectorAll(".ni").forEach(function(i){i.classList.remove("on");});
@@ -397,10 +394,8 @@ function sw(n,el){
   if(n===1)loadE(); if(n===3)loadA(); if(n===4)loadReq();
 }
 
-// LOADING
 function ldHTML(){return '<div class="ldots"><span class="ld"></span><span class="ld" style="animation-delay:.2s"></span><span class="ld" style="animation-delay:.4s"></span></div>';}
 
-// ── LOAD HOME ──
 function loadH(){
   document.getElementById("homeBranches").innerHTML=ldHTML();
   fetch(URL+"?action=getAttendance").then(function(r){return r.json();})
@@ -431,7 +426,7 @@ function loadH(){
       var hBg=cnt>0?"background:var(--gl)":"background:#fff5f5";
       var cCol=cnt>0?"color:var(--gd)":"color:var(--r)";
       html+='<div class="bcard"><div class="bcard-head" style="'+hBg+'"><span class="bcard-name">'+br+'</span>';
-      html+='<div style="display:flex;align-items:center;gap:5px;"><span class="bcard-cnt" style="'+cCol+'">'+cnt+'</span><span class="bcard-lbl">داخل الآن</span></div></div>';
+      html+='<div style="display:flex;align-items:center;gap:5px;"><span class="bcard-cnt" style="'+cCol+'">'+cnt+'</span><span class="bcard-lbl"> داخل الآن</span></div></div>';
       if(emps.length){
         html+='<div class="bcard-body">';
         emps.forEach(function(e){
@@ -446,7 +441,6 @@ function loadH(){
   }).catch(function(){document.getElementById("homeBranches").innerHTML='<div class="empty">تعذر التحميل</div>';});
 }
 
-// AUTO CHECK
 function startAutoCheck(){
   setInterval(function(){
     fetch(URL+"?action=getAttendance").then(function(r){return r.json();})
@@ -463,7 +457,6 @@ function startAutoCheck(){
   },10000);
 }
 
-// ── LOAD EMPLOYEES (40 CARDS) ──
 function loadE(){
   document.getElementById("empList").innerHTML=ldHTML();
   Promise.all([
@@ -477,24 +470,19 @@ function loadE(){
       if(r.action==="حضور") todayStatus[r.code]="in";
       if(r.action==="انصراف") todayStatus[r.code]="out";
     });
-    if(emps.length>40)emps=emps.slice(0,40);
+    if(emps.length>40) emps=emps.slice(0,40);
     cachedEmps=emps;
     if(!emps.length){document.getElementById("empList").innerHTML='<div class="empty">لا يوجد موظفون</div>';return;}
     var active=emps.filter(function(e){return e.status==="نشط"&&e.name;});
-    var inactive=emps.filter(function(e){return e.status!=="نشط"&&e.name;});
     var empty=emps.filter(function(e){return !e.name;});
     var html="";
     if(active.length){
       html+='<div class="sdiv">✅ نشطون على القوة ('+active.length+')</div>';
-      active.forEach(function(e,i){html+=buildCard(e,todayStatus[e.code],emps.indexOf(e));});
-    }
-    if(inactive.length){
-      html+='<div class="sdiv">⚪ خارج القوة ('+inactive.length+')</div>';
-      inactive.forEach(function(e){html+=buildCard(e,null,emps.indexOf(e));});
+      active.forEach(function(e){html+=buildCard(e,todayStatus[e.code],emps.indexOf(e));});
     }
     if(empty.length){
       html+='<div class="sdiv">📭 أكواد فاضية ('+empty.length+')</div>';
-      empty.forEach(function(e,i){html+=buildEmptyCard(e.code,emps.indexOf(e));});
+      empty.forEach(function(e){html+=buildEmptyCard(e.code,emps.indexOf(e));});
     }
     document.getElementById("empList").innerHTML=html;
   }).catch(function(){document.getElementById("empList").innerHTML='<div class="empty">تعذر التحميل</div>';});
@@ -523,16 +511,17 @@ function buildCard(e,status,idx){
 }
 
 function buildEmptyCard(code,idx){
-  var s='<div class="emp-card empty-slot"><div class="ec-head"><div class="ec-av" style="background:var(--b3);color:var(--m);font-size:.7rem;">'+code+'</div><div class="ec-info"><div class="ec-name" style="color:var(--m);">كارت فاضي</div><div class="ec-meta">'+code+' — لم تضف بيانات بعد</div></div></div><div style="padding:10px 14px;"><button class="ec-add" data-code="'+code+'" onclick="goAddWithCode(this.dataset.code)">➕ إضافة موظف على هذا الكود</button></div></div>';
+  var s='<div class="emp-card empty-slot"><div class="ec-head"><div class="ec-av" style="background:var(--b3);color:var(--m);font-size:.7rem;">'+code+'</div>';
+  s+='<div class="ec-info"><div class="ec-name" style="color:var(--m);">كارت فاضي</div><div class="ec-meta">'+code+' — لم تضف بيانات بعد</div></div></div>';
+  s+='<div style="padding:10px 14px;"><button class="ec-add" data-code="'+code+'" onclick="goAddWithCode(this.dataset.code)">➕ إضافة موظف على هذا الكود</button></div></div>';
   return s;
 }
 
 function goAddWithCode(code){
   sw(2,document.querySelectorAll(".ni")[2]);
-  toast("ℹ️","سيتم تعيين الكود "+code+" للموظف الجديد","");
+  toast("ℹ️","اضغط حفظ وسيتم تعيين الكود "+code+" للموظف الجديد","");
 }
 
-// EDIT
 function openEditIdx(idx){
   var e=cachedEmps[idx]; if(!e)return;
   document.getElementById("editCode").value=e.code||"";
@@ -550,18 +539,22 @@ function saveEdit(){
   var btn=document.getElementById("editSaveBtn");
   btn.disabled=true; btn.innerHTML='جاري الحفظ <span class="sp"></span>';
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"editEmployee",code:document.getElementById("editCode").value,name:name,
-      nationalId:document.getElementById("efi").value,branch:document.getElementById("efb").value,
-      shift:document.getElementById("efs").value,salary:document.getElementById("efsal").value,
-      phone:document.getElementById("efph").value,status:document.getElementById("efst").value})
+    body:JSON.stringify({
+      action:"editEmployee",
+      code:document.getElementById("editCode").value,
+      name:name,
+      nationalId:document.getElementById("efi").value,
+      salary:document.getElementById("efsal").value,
+      phone:document.getElementById("efph").value,
+      status:document.getElementById("efst").value
+    })
   }).then(function(){
     btn.disabled=false; btn.textContent="حفظ التعديلات";
     closeEdit(); toast("✅","تم تحديث بيانات الموظف بنجاح!","");
-    setTimeout(function(){loadE();},800);
+    setTimeout(function(){loadE();},1500);
   }).catch(function(){btn.disabled=false; btn.textContent="حفظ التعديلات"; toast("❌","حدث خطأ","");});
 }
 
-// DELETE
 function askDel(code){
   pendingDelCode=code;
   document.getElementById("pinInput").value="";
@@ -578,20 +571,19 @@ function confirmDelete(){
   var btn=document.getElementById("delConfirmBtn");
   btn.disabled=true; btn.innerHTML='<span class="sp"></span>جاري...';
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"editEmployee",code:code,status:"غير نشط"})})
-  .then(function(){
+    body:JSON.stringify({action:"editEmployee",code:code,name:"",nationalId:"",salary:"",phone:"",status:"نشط"})
+  }).then(function(){
     btn.disabled=false; btn.textContent="تأكيد";
-    closePinModal(); toast("✅","تم إزالة الموظف من القوة","سيظهر في قسم خارج القوة");
-    setTimeout(function(){loadE();},800);
+    closePinModal();
+    toast("✅","تم حذف بيانات الموظف","الكارت فاضي وجاهز لموظف جديد");
+    setTimeout(function(){loadE();},1500);
   }).catch(function(){btn.disabled=false; btn.textContent="تأكيد"; toast("❌","حدث خطأ","");});
 }
 
-// SALARY REPORT
 function openSalary(code,name){
   salEmpCode=code;
   var now=new Date();
-  var m=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
-  document.getElementById("salMonth").value=m;
+  document.getElementById("salMonth").value=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0");
   document.getElementById("salReportContent").innerHTML="";
   document.getElementById("salModal").classList.add("show");
 }
@@ -605,7 +597,7 @@ function loadSalaryReport(){
   .then(function(r){return r.json();})
   .then(function(d){
     btn.disabled=false; btn.textContent="عرض التقرير";
-    if(d.error){document.getElementById("salReportContent").innerHTML='<div class="empty">تعذر تحميل التقرير</div>';return;}
+    if(d.error){document.getElementById("salReportContent").innerHTML='<div class="empty">'+d.error+'</div>';return;}
     var html='<div class="report-card">';
     html+='<div class="rp-header"><div class="rp-name">'+d.name+'</div><div class="rp-month">'+d.code+' | '+d.month+'</div></div>';
     html+='<div class="rp-row"><span class="rp-lbl">الراتب الأساسي</span><span class="rp-val">'+Number(d.baseSalary).toLocaleString()+' ج.م</span></div>';
@@ -621,7 +613,7 @@ function loadSalaryReport(){
       html+='<div style="margin-top:12px;font-size:.78rem;font-weight:700;color:var(--m);">تفاصيل الأيام:</div>';
       d.details.forEach(function(day){
         html+='<div class="rp-row" style="font-size:.74rem;"><span>'+day.date+'</span>';
-        html+='<span>دخول: '+day.in+' | خروج: '+day.out+(day.deductLabel?' — '+day.deductLabel:'')+' | '+day.lateBy+'د</span></div>';
+        html+='<span>دخول: '+day.in+' | خروج: '+day.out+(day.deductLabel?' | '+day.deductLabel:'')+'</span></div>';
       });
     }
     html+='</div>';
@@ -629,7 +621,6 @@ function loadSalaryReport(){
   }).catch(function(){btn.disabled=false; btn.textContent="عرض التقرير"; document.getElementById("salReportContent").innerHTML='<div class="empty">تعذر التحميل</div>';});
 }
 
-// ADD EMPLOYEE
 function saveEmp(){
   var name=document.getElementById("fn").value.trim();
   var nid=document.getElementById("fi").value.trim();
@@ -639,11 +630,13 @@ function saveEmp(){
   btn.disabled=true; btn.innerHTML='جاري الحفظ <span class="sp"></span>';
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,
-      salary:document.getElementById("fsal").value,phone:document.getElementById("fph").value,
+      salary:document.getElementById("fsal").value,
+      phone:document.getElementById("fph").value,
       status:document.getElementById("fst").value})
   }).then(function(){
     btn.disabled=false; btn.textContent="حفظ الموظف";
     toast("✅","تم إضافة الموظف بنجاح!",""); clrF();
+    setTimeout(function(){sw(1,document.querySelectorAll(".ni")[1]);},1000);
   }).catch(function(){btn.disabled=false; btn.textContent="حفظ الموظف"; toast("❌","حدث خطأ","");});
 }
 function clrF(){
@@ -651,12 +644,13 @@ function clrF(){
   document.getElementById("fst").value="نشط";
 }
 
-// ATTENDANCE
 function loadA(){
   document.getElementById("al").innerHTML=ldHTML();
   fetch(URL+"?action=getAttendance").then(function(r){return r.json();})
   .then(function(data){
-    var recs=(data.records||[]).filter(function(r){var a=r.action||""; return r.name&&(a==="حضور"||a==="انصراف");}).slice(-60).reverse();
+    var recs=(data.records||[]).filter(function(r){
+      var a=r.action||""; return r.name&&(a==="حضور"||a==="انصراف");
+    }).slice(-60).reverse();
     if(!recs.length){document.getElementById("al").innerHTML='<div class="empty">لا توجد سجلات</div>';return;}
     var html="";
     recs.forEach(function(r){
@@ -664,13 +658,12 @@ function loadA(){
       html+='<div class="li">';
       html+='<div class="av" style="'+(isIn?"background:var(--gl);color:var(--gd)":"background:var(--rl);color:var(--r)")+'">'+(isIn?"▲":"▼")+'</div>';
       html+='<div class="lb"><div class="ln">'+r.name+'</div><div class="ls">'+r.branch+(r.timing?" · "+r.timing:"")+'</div></div>';
-      html+='<div class="lr"><span class="badge '+(isIn?"bg":"br2")+'">'+r.action+'</span><div style="font-size:.66rem;color:var(--m);margin-top:3px;">'+r.date+' '+r.time.slice(0,5)+'</div></div></div>';
+      html+='<div class="lr"><span class="badge '+(isIn?"bg":"br2")+'">'+r.action+'</span><div style="font-size:.66rem;color:var(--m);margin-top:3px;">'+r.date+' '+(r.time||"").slice(0,5)+'</div></div></div>';
     });
     document.getElementById("al").innerHTML=html;
   }).catch(function(){document.getElementById("al").innerHTML='<div class="empty">تعذر التحميل</div>';});
 }
 
-// REQUESTS
 function loadReq(){
   document.getElementById("reqList").innerHTML=ldHTML();
   fetch(URL+"?action=getRequests").then(function(r){return r.json();})
@@ -698,18 +691,18 @@ function renderReqs(list){
   document.getElementById("reqList").innerHTML=html;
 }
 
-// ABSENCE
 function saveAbs(){
   var name=document.getElementById("an").value.trim();
   var date=document.getElementById("ad").value;
   if(!name||!date){toast("⚠️","أدخل الاسم والتاريخ",""); return;}
   fetch(URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({action:"addAbsence",name:name,code:document.getElementById("ac").value,date:date,reason:document.getElementById("ar").value})})
-  .then(function(){toast("✅","تم تسجيل الغياب بإذن!",""); ["an","ac","ad","ar"].forEach(function(id){document.getElementById(id).value="";}); })
-  .catch(function(){toast("❌","خطأ","");});
+    body:JSON.stringify({action:"addAbsence",name:name,code:document.getElementById("ac").value,date:date,reason:document.getElementById("ar").value})
+  }).then(function(){
+    toast("✅","تم تسجيل الغياب بإذن!","");
+    ["an","ac","ad","ar"].forEach(function(id){document.getElementById(id).value="";});
+  }).catch(function(){toast("❌","خطأ","");});
 }
 
-// TOAST
 var toastTimer;
 function toast(icon,title,sub){
   clearTimeout(toastTimer);
