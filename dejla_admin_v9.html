@@ -742,6 +742,58 @@ function loadA(){
     renderAtt("");
   }).catch(function(){document.getElementById("al").innerHTML='<div class="empty">تعذر التحميل</div>';});
 }
+
+function renderAtt(dateFilter){
+  var recs=dateFilter?allAttRecs.filter(function(r){return r.date===dateFilter;}):allAttRecs;
+  var sorted=recs.slice().reverse().slice(0,100);
+  var html="";
+
+  // فلتر التاريخ
+  html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+  html+='<input type="date" id="attDate" value="'+(dateFilter||"")+'" onchange="renderAtt(this.value)"';
+  html+=' style="flex:1;padding:9px 12px;border:2px solid var(--b3);border-radius:10px;font-family:Cairo,sans-serif;font-size:.85rem;outline:none;"/>';
+  html+='<button class="rb" onclick="renderAtt(\'\')">الكل</button>';
+  html+='</div>';
+
+  // عدد السجلات
+  html+='<div style="font-size:.72rem;color:var(--m);margin-bottom:8px;font-weight:600;">';
+  html+=sorted.length+' سجل'+(dateFilter?" — "+dateFilter:"");
+  html+='</div>';
+
+  if(!sorted.length){
+    document.getElementById("al").innerHTML=html+'<div class="empty">لا توجد سجلات</div>';
+    return;
+  }
+
+  // السجلات
+  sorted.forEach(function(r){
+    var isIn=r.action==="حضور";
+    html+='<div class="li">';
+    // أيقونة الحضور/الانصراف
+    if(isIn){
+      html+='<div class="av" style="background:var(--gl);color:var(--gd);">▲</div>';
+    } else {
+      html+='<div class="av" style="background:var(--rl);color:var(--r);">▼</div>';
+    }
+    // الاسم والفرع
+    html+='<div class="lb">';
+    html+='<div class="ln">'+r.name+'</div>';
+    html+='<div class="ls">'+r.branch+(r.timing?" · "+r.timing:"")+'</div>';
+    html+='</div>';
+    // الوقت والحالة
+    html+='<div class="lr">';
+    if(isIn){
+      html+='<span class="badge bg">'+r.action+'</span>';
+    } else {
+      html+='<span class="badge br2">'+r.action+'</span>';
+    }
+    html+='<div style="font-size:.66rem;color:var(--m);margin-top:3px;">';
+    html+=r.date+' '+(r.time||"").slice(0,5);
+    html+='</div></div></div>';
+  });
+
+  document.getElementById("al").innerHTML=html;
+}
 function filterAtt(d){renderAtt(d);}
 function renderAtt(dateFilter){
   var today=new Date().toLocaleDateString("en-CA");
