@@ -439,6 +439,283 @@
 
             .sdiv { font-size: .78rem; font-weight: 700; color: var(--m); margin: 14px 0 8px; padding: 0 2px; display: flex; align-items: center; gap: 8px; }
             .sdiv::after { content: ""; flex: 1; height: 1px; background: var(--b3); }
+
+            /* ── REPORT SECTION ── */
+            .rep-emp-header {
+                background: linear-gradient(135deg, var(--gd), #2d5a0e);
+                color: white;
+                border-radius: 16px;
+                padding: 16px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .rep-emp-av {
+                width: 48px; height: 48px;
+                border-radius: 50%;
+                background: rgba(255,255,255,.2);
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.3rem; font-weight: 900;
+                flex-shrink: 0;
+            }
+            .rep-emp-name { font-size: 1rem; font-weight: 900; }
+            .rep-emp-meta { font-size: .72rem; opacity: .85; margin-top: 2px; }
+            .rep-emp-code {
+                margin-right: auto;
+                background: rgba(255,255,255,.2);
+                border-radius: 20px;
+                padding: 4px 12px;
+                font-size: .75rem;
+                font-weight: 700;
+            }
+
+            /* فلتر التقرير */
+            .rep-filter {
+                background: white;
+                border-radius: 14px;
+                padding: 12px;
+                margin-bottom: 12px;
+                border: 1.5px solid var(--b3);
+            }
+            .rep-filter-row {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+            .rep-filter-row:last-child { margin-bottom: 0; }
+            .rep-filter label {
+                font-size: .68rem;
+                font-weight: 700;
+                color: var(--m);
+                width: 40px;
+                flex-shrink: 0;
+            }
+            .rep-filter input[type="month"],
+            .rep-filter input[type="date"] {
+                flex: 1;
+                padding: 8px 10px;
+                border: 1.5px solid var(--b3);
+                border-radius: 10px;
+                font-family: "Cairo", sans-serif;
+                font-size: .8rem;
+                outline: none;
+                background: #fafafa;
+            }
+            .rep-filter input:focus { border-color: var(--g); }
+            .rep-filter-btns { display: flex; gap: 6px; }
+            .rep-fbtn {
+                padding: 7px 12px;
+                border: 1.5px solid var(--b3);
+                border-radius: 9px;
+                font-family: "Cairo", sans-serif;
+                font-size: .72rem;
+                font-weight: 700;
+                cursor: pointer;
+                background: white;
+                color: var(--gd);
+            }
+            .rep-fbtn.act { background: var(--gd); color: white; border-color: var(--gd); }
+
+            /* كارت اليوم */
+            .day-card {
+                background: white;
+                border-radius: 14px;
+                margin-bottom: 10px;
+                border: 1.5px solid var(--b3);
+                overflow: hidden;
+            }
+            .day-card-head {
+                padding: 10px 14px;
+                background: var(--gp);
+                border-bottom: 1.5px solid var(--b3);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .day-card-date { font-weight: 900; font-size: .88rem; color: var(--gd); }
+            .day-card-net {
+                font-weight: 900;
+                font-size: .82rem;
+                color: var(--gd);
+                background: var(--gl);
+                padding: 3px 10px;
+                border-radius: 20px;
+            }
+            .day-card-absent {
+                font-weight: 900;
+                font-size: .82rem;
+                color: var(--r);
+                background: var(--rl);
+                padding: 3px 10px;
+                border-radius: 20px;
+            }
+            .day-card-body { padding: 10px 14px; }
+
+            /* شيفت داخل اليوم */
+            .shift-row {
+                padding: 8px 0;
+                border-bottom: 1px solid var(--b3);
+            }
+            .shift-row:last-child { border-bottom: none; }
+            .shift-title {
+                font-size: .72rem;
+                font-weight: 700;
+                color: var(--m);
+                margin-bottom: 6px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+            .shift-branch-badge {
+                background: var(--gl);
+                color: var(--gd);
+                border-radius: 20px;
+                padding: 2px 8px;
+                font-size: .65rem;
+                font-weight: 700;
+            }
+            .shift-times {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 4px;
+            }
+            .shift-time-in {
+                font-size: .78rem;
+                font-weight: 700;
+                color: var(--gd);
+            }
+            .shift-time-out {
+                font-size: .78rem;
+                font-weight: 700;
+                color: var(--r);
+            }
+            .shift-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
+            .shift-tag-late {
+                background: var(--rl);
+                color: var(--r);
+                border-radius: 8px;
+                padding: 2px 8px;
+                font-size: .65rem;
+                font-weight: 700;
+            }
+            .shift-tag-ot {
+                background: var(--gl);
+                color: var(--gd);
+                border-radius: 8px;
+                padding: 2px 8px;
+                font-size: .65rem;
+                font-weight: 700;
+            }
+
+            /* إجمالي التقرير */
+            .rep-summary {
+                background: white;
+                border-radius: 16px;
+                padding: 16px;
+                margin-bottom: 12px;
+                border: 1.5px solid var(--b3);
+            }
+            .rep-sum-title {
+                font-weight: 900;
+                font-size: .9rem;
+                color: var(--t);
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+                border-bottom: 1.5px solid var(--b3);
+            }
+            .rep-sum-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 7px 0;
+                border-bottom: 1px solid var(--b3);
+                font-size: .82rem;
+            }
+            .rep-sum-row:last-child { border-bottom: none; }
+            .rep-sum-lbl { color: var(--m); font-weight: 600; }
+            .rep-sum-val { font-weight: 700; }
+            .rep-net-box {
+                background: linear-gradient(135deg, var(--gd), #2d5a0e);
+                border-radius: 12px;
+                padding: 14px;
+                text-align: center;
+                margin-top: 12px;
+                color: white;
+            }
+            .rep-net-lbl { font-size: .78rem; opacity: .85; }
+            .rep-net-val { font-size: 1.5rem; font-weight: 900; margin-top: 4px; }
+
+            /* أزرار الطباعة */
+            .rep-print-btns {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .rep-print-btn {
+                padding: 13px;
+                border: none;
+                border-radius: 13px;
+                font-family: "Cairo", sans-serif;
+                font-size: .82rem;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all .2s;
+            }
+            .rep-print-btn:active { transform: scale(.97); }
+
+            /* كروت الموظفين في تاب التقرير */
+            .rep-emp-card {
+                background: white;
+                border-radius: 16px;
+                margin-bottom: 10px;
+                border: 1.5px solid var(--b3);
+                overflow: hidden;
+            }
+            .rep-ec-head {
+                padding: 12px 14px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .rep-ec-av {
+                width: 42px; height: 42px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--g), var(--gd));
+                color: white;
+                display: flex; align-items: center; justify-content: center;
+                font-size: .85rem; font-weight: 900;
+                flex-shrink: 0;
+            }
+            .rep-ec-info { flex: 1; min-width: 0; }
+            .rep-ec-name {
+                font-weight: 900; font-size: .88rem;
+                white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            }
+            .rep-ec-meta { font-size: .68rem; color: var(--m); margin-top: 2px; }
+            .rep-ec-btn {
+                padding: 9px 14px;
+                border: none;
+                border-radius: 10px;
+                background: linear-gradient(135deg, var(--g), var(--gd));
+                color: white;
+                font-family: "Cairo", sans-serif;
+                font-size: .75rem;
+                font-weight: 700;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+
+            /* print */
+            @media print {
+                .bnav, .topbar, .rep-filter, .rep-print-btns, .rep-back-btn { display: none !important; }
+                body { background: white; }
+                .rep-emp-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .rep-net-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+
         </style>
     </head>
     <body>
@@ -611,6 +888,56 @@
                         <button class="btn bng" onclick="saveAbs()">تسجيل الغياب</button>
                     </div>
                 </div>
+
+                <!-- REPORT s5 -->
+                <div class="sec" id="s5">
+                    <!-- قائمة الموظفين للتقرير -->
+                    <div id="repList">
+                        <div class="ldots"><span class="ld"></span><span class="ld" style="animation-delay:.2s"></span><span class="ld" style="animation-delay:.4s"></span></div>
+                    </div>
+                    <!-- تقرير موظف معين -->
+                    <div id="repDetail" style="display:none;">
+                        <button class="rep-back-btn btn bno" onclick="backToRepList()" style="margin-bottom:10px;">🔙 رجوع</button>
+                        <!-- header الموظف -->
+                        <div class="rep-emp-header">
+                            <div class="rep-emp-av" id="repEmpAv">أ</div>
+                            <div>
+                                <div class="rep-emp-name" id="repEmpName"></div>
+                                <div class="rep-emp-meta" id="repEmpMeta"></div>
+                            </div>
+                            <div class="rep-emp-code" id="repEmpCode"></div>
+                        </div>
+                        <!-- فلتر -->
+                        <div class="rep-filter">
+                            <div class="rep-filter-row">
+                                <label>الشهر</label>
+                                <input type="month" id="repMonth" onchange="loadRepData()"/>
+                            </div>
+                            <div class="rep-filter-row">
+                                <label>من</label>
+                                <input type="date" id="repFrom"/>
+                                <label style="width:30px;text-align:center;">لـ</label>
+                                <input type="date" id="repTo"/>
+                            </div>
+                            <div class="rep-filter-row">
+                                <div class="rep-filter-btns">
+                                    <button class="rep-fbtn act" id="repBtnAll" onclick="repFilterAll()">الكل</button>
+                                    <button class="rep-fbtn" id="repBtnRange" onclick="repFilterRange()">تحديد فترة</button>
+                                </div>
+                                <button class="rb" onclick="loadRepData()" style="margin-right:auto;">عرض</button>
+                            </div>
+                        </div>
+                        <!-- محتوى التقرير -->
+                        <div id="repContent">
+                            <div class="empty">اختر الشهر واضغط عرض</div>
+                        </div>
+                        <!-- أزرار الطباعة -->
+                        <div class="rep-print-btns" id="repPrintBtns" style="display:none;">
+                            <button class="rep-print-btn" style="background:var(--gl);color:var(--gd);" onclick="printRep()">🖨️ طباعة التقرير</button>
+                            <button class="rep-print-btn" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;" onclick="sendRepWhatsApp()">📲 إرسال PDF واتساب</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- NAV — fixed bottom مع safe area -->
             <nav class="bnav">
@@ -633,6 +960,10 @@
                 <div class="ni" onclick="sw(4,this)">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     <span>الطلبات</span>
+                </div>
+                <div class="ni" onclick="sw(5,this)">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <span>التقارير</span>
                 </div>
             </nav>
         </div>
@@ -695,6 +1026,7 @@
                 if (n === 1) loadE();
                 if (n === 3) loadA();
                 if (n === 4) loadReq();
+                if (n === 5) loadRepList();
             }
 
             function ldHTML() {
