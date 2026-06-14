@@ -716,6 +716,54 @@
                 .rep-net-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             }
 
+
+            .rep-emp-header{background:linear-gradient(135deg,var(--gd),#2d5a0e);color:white;border-radius:16px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;}
+            .rep-emp-av{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;flex-shrink:0;}
+            .rep-emp-name{font-size:1rem;font-weight:900;}
+            .rep-emp-meta{font-size:.72rem;opacity:.85;margin-top:2px;}
+            .rep-emp-code{margin-right:auto;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;font-size:.75rem;font-weight:700;}
+            .rep-filter{background:white;border-radius:14px;padding:12px;margin-bottom:12px;border:1.5px solid var(--b3);}
+            .rep-filter-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+            .rep-filter-row:last-child{margin-bottom:0;}
+            .rep-filter label{font-size:.68rem;font-weight:700;color:var(--m);width:40px;flex-shrink:0;}
+            .rep-filter input[type=month],.rep-filter input[type=date]{flex:1;padding:8px 10px;border:1.5px solid var(--b3);border-radius:10px;font-family:"Cairo",sans-serif;font-size:.8rem;outline:none;background:#fafafa;}
+            .rep-fbtn{padding:7px 12px;border:1.5px solid var(--b3);border-radius:9px;font-family:"Cairo",sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;background:white;color:var(--gd);}
+            .rep-fbtn.act{background:var(--gd);color:white;border-color:var(--gd);}
+            .day-card{background:white;border-radius:14px;margin-bottom:10px;border:1.5px solid var(--b3);overflow:hidden;}
+            .day-card-head{padding:10px 14px;background:var(--gp);border-bottom:1.5px solid var(--b3);display:flex;align-items:center;justify-content:space-between;}
+            .day-card-date{font-weight:900;font-size:.88rem;color:var(--gd);}
+            .day-card-net{font-weight:900;font-size:.82rem;color:var(--gd);background:var(--gl);padding:3px 10px;border-radius:20px;}
+            .day-card-absent{font-weight:900;font-size:.82rem;color:var(--r);background:var(--rl);padding:3px 10px;border-radius:20px;}
+            .day-card-body{padding:10px 14px;}
+            .shift-row{padding:8px 0;border-bottom:1px solid var(--b3);}
+            .shift-row:last-child{border-bottom:none;}
+            .shift-branch-badge{background:var(--gl);color:var(--gd);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+            .shift-times{display:flex;gap:10px;margin-bottom:4px;}
+            .shift-time-in{font-size:.78rem;font-weight:700;color:var(--gd);}
+            .shift-time-out{font-size:.78rem;font-weight:700;color:var(--r);}
+            .shift-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+            .shift-tag-late{background:var(--rl);color:var(--r);border-radius:8px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+            .shift-tag-ot{background:var(--gl);color:var(--gd);border-radius:8px;padding:2px 8px;font-size:.65rem;font-weight:700;}
+            .rep-summary{background:white;border-radius:16px;padding:16px;margin-bottom:12px;border:1.5px solid var(--b3);}
+            .rep-sum-title{font-weight:900;font-size:.9rem;color:var(--t);margin-bottom:12px;padding-bottom:8px;border-bottom:1.5px solid var(--b3);}
+            .rep-sum-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--b3);font-size:.82rem;}
+            .rep-sum-row:last-child{border-bottom:none;}
+            .rep-sum-lbl{color:var(--m);font-weight:600;}
+            .rep-sum-val{font-weight:700;}
+            .rep-net-box{background:linear-gradient(135deg,var(--gd),#2d5a0e);border-radius:12px;padding:14px;text-align:center;margin-top:12px;color:white;}
+            .rep-net-lbl{font-size:.78rem;opacity:.85;}
+            .rep-net-val{font-size:1.5rem;font-weight:900;margin-top:4px;}
+            .rep-print-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+            .rep-print-btn{padding:13px;border:none;border-radius:13px;font-family:"Cairo",sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;}
+            .rep-ec-card{background:white;border-radius:16px;margin-bottom:10px;border:1.5px solid var(--b3);overflow:hidden;}
+            .rep-ec-head{padding:12px 14px;display:flex;align-items:center;gap:10px;}
+            .rep-ec-av{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--g),var(--gd));color:white;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:900;flex-shrink:0;}
+            .rep-ec-info{flex:1;min-width:0;}
+            .rep-ec-name{font-weight:900;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+            .rep-ec-meta{font-size:.68rem;color:var(--m);margin-top:2px;}
+            .rep-ec-btn{padding:9px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--g),var(--gd));color:white;font-family:"Cairo",sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap;}
+            @media print{.bnav,.topbar,.rep-filter,.rep-print-btns,.rb{display:none !important;}}
+
         </style>
     </head>
     <body>
@@ -957,6 +1005,10 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
                     <span>الحضور</span>
                 </div>
+                <div class="ni" onclick="sw(5,this)">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <span>التقارير</span>
+                </div>
                 <div class="ni" onclick="sw(4,this)">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     <span>الطلبات</span>
@@ -1026,6 +1078,7 @@
                 if (n === 1) loadE();
                 if (n === 3) loadA();
                 if (n === 4) loadReq();
+                if (n === 5) loadRepList();
             }
 
             function ldHTML() {
@@ -1435,6 +1488,175 @@
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addAbsence",name:name,code:document.getElementById("ac").value,date:date,reason:document.getElementById("ar").value})})
                 .then(function() { toast("✅","تم تسجيل الغياب بإذن!",""); ["an","ac","ad","ar"].forEach(function(id) { document.getElementById(id).value=""; }); })
                 .catch(function() { toast("❌","خطأ",""); });
+            }
+
+
+            // ── REPORT JS ──
+            var _repEmp = null, _repRange = false;
+            var _dNames = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+            var _mNames = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+            function loadRepList() {
+                document.getElementById("repList").style.display = "block";
+                document.getElementById("repDetail").style.display = "none";
+                document.getElementById("repList").innerHTML = ldHTML();
+                fetch(URL + "?action=getEmployees")
+                .then(function(r){return r.json();})
+                .then(function(d) {
+                    var emps = (d.employees||[]).filter(function(e){return e.name&&e.name.trim();});
+                    if (!emps.length) { document.getElementById("repList").innerHTML = '<div class="empty">لا يوجد موظفون</div>'; return; }
+                    var h = '<div class="stitle">التقارير والرواتب</div>';
+                    emps.forEach(function(e) {
+                        var av = e.name.charAt(0)||"م";
+                        var sal = e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "";
+                        h += '<div class="rep-ec-card"><div class="rep-ec-head">';
+                        h += '<div class="rep-ec-av">' + av + '</div>';
+                        h += '<div class="rep-ec-info"><div class="rep-ec-name">' + e.name + '</div><div class="rep-ec-meta">' + e.code + (sal?" • "+sal:"") + '</div></div>';
+                        h += '<button class="rep-ec-btn" data-code="' + e.code + '" data-name="' + e.name.replace(/"/g,"") + '" data-salary="' + (e.salary||0) + '" data-phone="' + (e.phone||"") + '" onclick="openRepDetail(this)">&#128202; التقرير</button>';
+                        h += '</div></div>';
+                    });
+                    document.getElementById("repList").innerHTML = h;
+                }).catch(function(){document.getElementById("repList").innerHTML='<div class="empty">تعذر التحميل</div>';});
+            }
+
+            function openRepDetail(btn) {
+                _repEmp = {code:btn.dataset.code, name:btn.dataset.name, salary:parseFloat(btn.dataset.salary)||0, phone:btn.dataset.phone||""};
+                document.getElementById("repEmpAv").textContent = _repEmp.name.charAt(0)||"م";
+                document.getElementById("repEmpName").textContent = _repEmp.name;
+                document.getElementById("repEmpMeta").textContent = "الراتب الأساسي: " + Number(_repEmp.salary).toLocaleString() + " ج.م";
+                document.getElementById("repEmpCode").textContent = _repEmp.code;
+                var now = new Date();
+                document.getElementById("repMonth").value = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+                document.getElementById("repList").style.display = "none";
+                document.getElementById("repDetail").style.display = "block";
+                _repRange = false;
+                loadRepData();
+            }
+
+            function backToRepList() {
+                document.getElementById("repDetail").style.display = "none";
+                document.getElementById("repList").style.display = "block";
+                _repEmp = null;
+            }
+
+            function repFilterAll() {
+                _repRange = false;
+                document.getElementById("repBtnAll").classList.add("act");
+                document.getElementById("repBtnRange").classList.remove("act");
+                loadRepData();
+            }
+
+            function repFilterRange() {
+                _repRange = true;
+                document.getElementById("repBtnRange").classList.add("act");
+                document.getElementById("repBtnAll").classList.remove("act");
+                loadRepData();
+            }
+
+            function loadRepData() {
+                if (!_repEmp) return;
+                document.getElementById("repContent").innerHTML = ldHTML();
+                document.getElementById("repPrintBtns").style.display = "none";
+                fetch(URL + "?action=getAttendance")
+                .then(function(r){return r.json();})
+                .then(function(d) {
+                    var month = document.getElementById("repMonth").value;
+                    var fr = _repRange ? document.getElementById("repFrom").value : null;
+                    var to = _repRange ? document.getElementById("repTo").value : null;
+                    var recs = (d.records||[]).filter(function(r) {
+                        if (r.code !== _repEmp.code) return false;
+                        if (!r.date || !r.date.startsWith(month)) return false;
+                        if (_repRange && fr && r.date < fr) return false;
+                        if (_repRange && to && r.date > to) return false;
+                        return true;
+                    });
+                    var parts = month.split("-");
+                    var yr = parseInt(parts[0]), mn = parseInt(parts[1])-1;
+                    var dim = new Date(yr,mn+1,0).getDate();
+                    var wd = 0;
+                    for (var d2=1;d2<=dim;d2++){if(new Date(yr,mn,d2).getDay()!==5)wd++;}
+                    var spd = _repEmp.salary/(wd||1), sph = spd/8, spm = sph/60;
+                    var dm = {};
+                    recs.forEach(function(r){if(!dm[r.date])dm[r.date]=[];dm[r.date].push(r);});
+                    var days = [];
+                    for (var d3=1;d3<=dim;d3++){
+                        var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d3).padStart(2,"0");
+                        if(_repRange&&fr&&dt<fr)continue;
+                        if(_repRange&&to&&dt>to)continue;
+                        if(new Date(yr,mn,d3).getDay()===5)continue;
+                        days.push(dt);
+                    }
+                    var tp=0,ta=0,tla=0,toa=0,h="";
+                    days.forEach(function(dt){
+                        var dr=dm[dt]||[];
+                        var dobj=new Date(dt);
+                        var dlbl=_dNames[dobj.getDay()]+" "+dobj.getDate()+" "+_mNames[dobj.getMonth()];
+                        if(!dr.length){
+                            ta++;tla+=spd;
+                            h+='<div class="day-card"><div class="day-card-head"><div class="day-card-date">&#128197; '+dlbl+'</div><div class="day-card-absent">غياب</div></div>';
+                            h+='<div class="day-card-body" style="color:var(--r);font-size:.8rem;font-weight:700;">&#9940; غياب — خصم يوم كامل ('+Math.round(spd)+' ج.م)</div></div>';
+                            return;
+                        }
+                        tp++;
+                        var ins=dr.filter(function(r){return r.action==="حضور";});
+                        var outs=dr.filter(function(r){return r.action==="انصراف";});
+                        var dl=0,doa=0,sh="";
+                        ins.forEach(function(inn,i){
+                            var out=outs[i]||null;
+                            var br=inn.branch||"";
+                            var sf=inn.shift||"";
+                            var it=inn.time?inn.time.slice(0,5):"--";
+                            var ot=out?out.time.slice(0,5):"--";
+                            var tm=inn.timing||"";
+                            var la=0,oa=0,ll="",ol="";
+                            if(tm&&tm.indexOf("تأخير")>=0){
+                                var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                                if(ms>=30){la=spd;ll="خصم يوم كامل";}
+                                else if(ms>=15){la=spd/2;ll="خصم نص يوم";}
+                                else if(ms>=10){la=sph;ll="خصم ساعة";}
+                                else if(ms>=5){la=spm*10;ll="خصم 10 دقائق";}
+                            }
+                            if(tm&&tm.indexOf("أوفر")>=0){
+                                var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                                oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
+                            }
+                            dl+=la;doa+=oa;tla+=la;toa+=oa;
+                            sh+='<div class="shift-row"><div style="font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;">';
+                            sh+='<span class="shift-branch-badge">&#127970; '+(br||"—")+'</span>';
+                            if(sf)sh+='<span style="font-size:.65rem;color:var(--m);">'+sf+'</span>';
+                            sh+='</div><div class="shift-times"><span class="shift-time-in">&#9650; '+it+'</span>';
+                            if(ot!=="--")sh+='<span class="shift-time-out">&#9660; '+ot+'</span>';
+                            else sh+='<span style="font-size:.72rem;color:var(--m);">انصراف لم يسجل</span>';
+                            sh+='</div>';
+                            if(ll||ol){sh+='<div class="shift-tags">';if(ll)sh+='<span class="shift-tag-late">&#9888; '+tm+' — '+ll+'</span>';if(ol)sh+='<span class="shift-tag-ot">&#11088; '+ol+'</span>';sh+='</div>';}
+                            sh+='</div>';
+                        });
+                        var dn=spd-dl+doa;
+                        h+='<div class="day-card"><div class="day-card-head"><div class="day-card-date">&#128197; '+dlbl+'</div><div class="day-card-net">&#128176; '+Math.round(dn)+' ج.م</div></div><div class="day-card-body">'+sh+'</div></div>';
+                    });
+                    var ns=_repEmp.salary-tla+toa;
+                    h+='<div class="rep-summary"><div class="rep-sum-title">&#128202; إجمالي '+(_repRange?"الفترة المحددة":"شهر "+_mNames[mn])+'</div>';
+                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">أيام الحضور</span><span class="rep-sum-val">'+tp+' يوم</span></div>';
+                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">أيام الغياب</span><span class="rep-sum-val" style="color:var(--r);">'+ta+' يوم</span></div>';
+                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">إجمالي الخصومات</span><span class="rep-sum-val" style="color:var(--r);">- '+Math.round(tla)+' ج.م</span></div>';
+                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">إجمالي الأوفر تايم</span><span class="rep-sum-val" style="color:var(--gd);">+ '+Math.round(toa)+' ج.م</span></div>';
+                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">الراتب الأساسي</span><span class="rep-sum-val">'+Number(_repEmp.salary).toLocaleString()+' ج.م</span></div>';
+                    h+='<div class="rep-net-box"><div class="rep-net-lbl">صافي الراتب</div><div class="rep-net-val">'+Math.round(ns).toLocaleString()+' ج.م</div></div></div>';
+                    document.getElementById("repContent").innerHTML = h;
+                    document.getElementById("repPrintBtns").style.display = "grid";
+                }).catch(function(){document.getElementById("repContent").innerHTML='<div class="empty">تعذر تحميل البيانات</div>';});
+            }
+
+            function sendRepWhatsApp() {
+                if (!_repEmp||!_repEmp.phone){toast("⚠️","مفيش رقم للموظف","");return;}
+                var ph = _repEmp.phone.toString().replace(/[^0-9]/g,"");
+                if(ph.startsWith("0"))ph="2"+ph;
+                var msg = "&#128202; *تقرير الراتب — Degla Smart Lab*\n\n";
+                msg += "الموظف: *"+_repEmp.name+"*\n";
+                msg += "الكود: "+_repEmp.code+"\n";
+                msg += "الشهر: "+document.getElementById("repMonth").value+"\n\n";
+                msg += "_Degla Smart Lab — HR Team_ &#127807;";
+                window.open("https://wa.me/"+ph+"?text="+encodeURIComponent(msg),"_blank");
             }
 
             // TOAST
