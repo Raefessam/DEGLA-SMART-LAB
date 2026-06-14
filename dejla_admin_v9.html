@@ -1116,7 +1116,7 @@
                         if (emps.length) {
                             html += '<div class="bcard-body">';
                             emps.forEach(function(e) {
-                                var outPart = e.out ? '<span class="bemp-out">🚪' + e.outT + '</span>' : '<span class="bemp-still">داخل ♥</span>';
+                                var outPart = e.out ? '<span class="bemp-out">' + e.outT + '</span>' : '<span class="bemp-still">داخل ♥</span>';
                                 html += '<div class="bemp"><span class="bemp-name">' + e.name + '</span><span class="bemp-in">⏰' + e.innT + '</span>' + outPart + '</div>';
                             });
                             html += '</div>';
@@ -1137,7 +1137,7 @@
                         var recs = (data.records || []).filter(function(r) { return r.date === today; });
                         if (recs.length > lastCount && lastCount > 0) {
                             var last = recs[recs.length - 1];
-                            toast(last.action === "حضور" ? "🟢" : "🔴", last.name + " • " + last.action, last.branch + " | " + last.time.slice(0,5));
+                            toast(last.action === "حضور" ? "" : "", last.name + " • " + last.action, last.branch + " | " + last.time.slice(0,5));
                             loadH();
                         }
                         lastCount = recs.length;
@@ -1170,12 +1170,12 @@
 
             function renderEmpList(active, inactive, todayStatus, query) {
                 var html = '<div style="position:relative;margin-bottom:12px;">';
-                html += '<input type="text" id="empSearch" value="' + query + '" oninput="searchEmps(this.value)" placeholder="🔍  بحث باسم أو كود..." style="width:100%;padding:11px 14px;border:2px solid var(--b3);border-radius:12px;font-family:Cairo,sans-serif;font-size:.88rem;outline:none;background:white;"/>';
+                html += '<input type="text" id="empSearch" value="' + query + '" oninput="searchEmps(this.value)" placeholder="  بحث باسم أو كود..." style="width:100%;padding:11px 14px;border:2px solid var(--b3);border-radius:12px;font-family:Cairo,sans-serif;font-size:.88rem;outline:none;background:white;"/>';
                 html += '</div>';
                 var fActive = query ? active.filter(function(e) { var q = query.toLowerCase(); return e.name.toLowerCase().includes(q) || e.code.toLowerCase().includes(q); }) : active;
                 var fInactive = query ? inactive.filter(function(e) { var q = query.toLowerCase(); return e.name.toLowerCase().includes(q) || e.code.toLowerCase().includes(q); }) : inactive;
                 if (fActive.length) {
-                    html += '<div class="sdiv">✅ نشطون على القوة (' + fActive.length + ')</div>';
+                    html += '<div class="sdiv"> نشطون على القوة (' + fActive.length + ')</div>';
                     fActive.forEach(function(e) { html += buildActiveCard(e, todayStatus[e.code], cachedEmps.indexOf(e)); });
                 }
                 if (fInactive.length) {
@@ -1194,7 +1194,7 @@
             }
 
             function buildActiveCard(e, status, idx) {
-                var badge = status === "in" ? '<span class="badge bg">🟢 حاضر</span>' : status === "out" ? '<span class="badge br2">🔴 انصرف</span>' : '<span class="badge bgray">⚪ غياب</span>';
+                var badge = status === "in" ? '<span class="badge bg"> حاضر</span>' : status === "out" ? '<span class="badge br2"> انصرف</span>' : '<span class="badge bgray">⚪ غياب</span>';
                 var h = '<div class="emp-card"><div class="ec-head">';
                 h += '<div class="ec-av" style="background:var(--gl);color:var(--gd);">' + e.name.charAt(0) + '</div>';
                 h += '<div class="ec-info"><div class="ec-name">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div>' + badge + '</div>';
@@ -1204,9 +1204,9 @@
                 h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.phone || "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">رقم البطاقة</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.nationalId || "—") + '</div></div>';
                 h += '</div><div class="ec-actions">';
-                h += '<button class="ec-edit" data-idx="' + idx + '" onclick="openEditIdx(parseInt(this.dataset.idx))">✏️ تعديل</button>';
-                h += '<button class="ec-del" data-code="' + e.code + '" data-type="deactivate" onclick="askDel(this.dataset.code,this.dataset.type)">🚫 إيقاف</button>';
-                h += '<button class="ec-edit" style="background:#e3f2fd;color:#1565c0;" data-code="' + e.code + '" data-name="' + e.name + '" onclick="openSalary(this.dataset.code,this.dataset.name)">💰 راتب</button>';
+                h += '<button class="ec-edit" data-idx="' + idx + '" onclick="openEditIdx(parseInt(this.dataset.idx))">✏ تعديل</button>';
+                h += '<button class="ec-del" data-code="' + e.code + '" data-type="deactivate" onclick="askDel(this.dataset.code,this.dataset.type)">(x) إيقاف</button>';
+                h += '<button class="ec-edit" style="background:#e3f2fd;color:#1565c0;" data-code="' + e.code + '" data-name="' + e.name + '" onclick="openSalary(this.dataset.code,this.dataset.name)"> راتب</button>';
                 h += '</div></div>';
                 return h;
             }
@@ -1220,16 +1220,16 @@
                 h += '<div><div class="ec-stat-lbl">الراتب</div><div class="ec-stat-val">' + (e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.phone || "—") + '</div></div>';
                 h += '</div><div class="ec-actions">';
-                h += '<button class="ec-edit" style="background:var(--gl);color:var(--gd);" data-code="' + e.code + '" onclick="activateEmp(this.dataset.code)">✅ تفعيل</button>';
-                h += '<button class="ec-del" data-code="' + e.code + '" data-type="delete" onclick="askDel(this.dataset.code,this.dataset.type)">🗑️ حذف نهائي</button>';
+                h += '<button class="ec-edit" style="background:var(--gl);color:var(--gd);" data-code="' + e.code + '" onclick="activateEmp(this.dataset.code)"> تفعيل</button>';
+                h += '<button class="ec-del" data-code="' + e.code + '" data-type="delete" onclick="askDel(this.dataset.code,this.dataset.type)"> حذف نهائي</button>';
                 h += '</div></div>';
                 return h;
             }
 
             function activateEmp(code) {
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"editEmployee",code:code,status:"نشط"})})
-                .then(function() { toast("✅","تم تفعيل الموظف بنجاح!",""); setTimeout(function() { loadE(); }, 1500); })
-                .catch(function() { toast("❌","حدث خطأ",""); });
+                .then(function() { toast("","تم تفعيل الموظف بنجاح!",""); setTimeout(function() { loadE(); }, 1500); })
+                .catch(function() { toast("","حدث خطأ",""); });
             }
 
             function openEditIdx(idx) {
@@ -1245,12 +1245,12 @@
             function closeEdit() { document.getElementById("editModal").classList.remove("show"); }
             function saveEdit() {
                 var name = document.getElementById("efn").value.trim();
-                if (!name) { toast("⚠️","أدخل الاسم",""); return; }
+                if (!name) { toast("(!)","أدخل الاسم",""); return; }
                 var btn = document.getElementById("editSaveBtn");
                 btn.disabled = true; btn.innerHTML = 'جاري الحفظ <span class="sp"></span>';
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"editEmployee",code:document.getElementById("editCode").value,name:name,nationalId:document.getElementById("efi").value,salary:document.getElementById("efsal").value,phone:document.getElementById("efph").value,status:document.getElementById("efst").value})})
-                .then(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; closeEdit(); toast("✅","تم تحديث بيانات الموظف بنجاح!",""); setTimeout(function() { loadE(); }, 1500); })
-                .catch(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; toast("❌","حدث خطأ",""); });
+                .then(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; closeEdit(); toast("","تم تحديث بيانات الموظف بنجاح!",""); setTimeout(function() { loadE(); }, 1500); })
+                .catch(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; toast("","حدث خطأ",""); });
             }
 
             function askDel(code, type) {
@@ -1270,8 +1270,8 @@
                 btn.disabled = true; btn.innerHTML = '<span class="sp"></span>جاري...';
                 var payload = type === "delete" ? {action:"editEmployee",code:code,name:"",nationalId:"",salary:"",phone:"",status:"نشط"} : {action:"editEmployee",code:code,status:"غير نشط"};
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-                .then(function() { btn.disabled=false; btn.textContent="تأكيد"; closePinModal(); toast("✅",type==="delete"?"تم الحذف النهائي":"تم إيقاف الموظف",""); setTimeout(function() { loadE(); }, 1500); })
-                .catch(function() { btn.disabled=false; btn.textContent="تأكيد"; toast("❌","حدث خطأ",""); });
+                .then(function() { btn.disabled=false; btn.textContent="تأكيد"; closePinModal(); toast("",type==="delete"?"تم الحذف النهائي":"تم إيقاف الموظف",""); setTimeout(function() { loadE(); }, 1500); })
+                .catch(function() { btn.disabled=false; btn.textContent="تأكيد"; toast("","حدث خطأ",""); });
             }
 
             // SALARY
@@ -1321,8 +1321,8 @@
             function saveEmp() {
                 var name = document.getElementById("fn").value.trim();
                 var nid = document.getElementById("fi").value.trim();
-                if (!name) { toast("⚠️","أدخل الاسم الثلاثي",""); return; }
-                if (!nid || nid.length !== 14) { toast("⚠️","رقم البطاقة 14 رقم",""); return; }
+                if (!name) { toast("(!)","أدخل الاسم الثلاثي",""); return; }
+                if (!nid || nid.length !== 14) { toast("(!)","رقم البطاقة 14 رقم",""); return; }
                 var btn = document.getElementById("sb");
                 btn.disabled=true; btn.innerHTML = 'جاري الحفظ <span class="sp"></span>';
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,salary:document.getElementById("fsal").value,phone:document.getElementById("fph").value,status:document.getElementById("fst").value})})
@@ -1335,45 +1335,45 @@
                         code: "جاري التحديد"
                     };
                     clrF();
-                    document.getElementById("welcomeName").textContent = "✅ تم إضافة " + name + " بنجاح!";
+                    document.getElementById("welcomeName").textContent = " تم إضافة " + name + " بنجاح!";
                     document.getElementById("welcomeModal").classList.add("show");
                 })
-                .catch(function() { btn.disabled=false; btn.textContent="حفظ الموظف"; toast("❌","حدث خطأ",""); });
+                .catch(function() { btn.disabled=false; btn.textContent="حفظ الموظف"; toast("","حدث خطأ",""); });
             }
             
             function sendWelcomeWhatsApp(name, code, nid, phone) {
-                if (!phone) { toast("⚠️","مفيش رقم موبايل للموظف",""); return; }
+                if (!phone) { toast("(!)","مفيش رقم موبايل للموظف",""); return; }
                 var ph = phone.toString().replace(/[^0-9]/g,"");
                 if (ph.startsWith("0")) ph = "2" + ph;
-                var msg = "🌿 *Degla Smart Lab*\n";
-                msg += "مرحباً بك في فريق العمل! 🎉\n\n";
-                msg += "نسعد بانضمامك لعائلة Degla Smart Lab ونتمنى لك تجربة عمل مميزة ومثمرة معنا 🌟\n\n";
+                var msg = " *Degla Smart Lab*\n";
+                msg += "مرحباً بك في فريق العمل! \n\n";
+                msg += "نسعد بانضمامك لعائلة Degla Smart Lab ونتمنى لك تجربة عمل مميزة ومثمرة معنا (*)\n\n";
                 msg += "━━━━━━━━━━━━━━━━\n";
-                msg += "📋 *بياناتك:*\n";
+                msg += " *بياناتك:*\n";
                 msg += "• الاسم: " + name + "\n";
                 msg += "• الكود: " + code + "\n";
                 msg += "• رقم البطاقة: " + nid + "\n\n";
                 msg += "━━━━━━━━━━━━━━━━\n";
-                msg += "📱 *كيفية استخدام النظام:*\n\n";
-                msg += "1️⃣ *تسجيل الحضور والانصراف:*\n";
+                msg += " *كيفية استخدام النظام:*\n\n";
+                msg += "1⃣ *تسجيل الحضور والانصراف:*\n";
                 msg += "https://raefessam.github.io/DEGLA-SMART-LAB/dejla_attendance_v4.html\n";
                 msg += "• أدخل اسمك الثلاثي بالعربي\n";
                 msg += "• أدخل الكود الخاص بك\n";
                 msg += "• اختر الفرع والشيفت\n";
-                msg += "• اضغط ✅ حضور أو 🔴 انصراف\n\n";
-                msg += "2️⃣ *طلب سلفة:*\n";
-                msg += "• بعد تسجيل الدخول اضغط 📋 طلب سلفة/إذن\n";
-                msg += "• اختر 💰 سلفة وأدخل المبلغ والسبب\n\n";
-                msg += "3️⃣ *طلب إذن غياب:*\n";
-                msg += "• بعد تسجيل الدخول اضغط 📋 طلب سلفة/إذن\n";
-                msg += "• اختر 📝 إذن غياب وأدخل السبب والمدة\n\n";
+                msg += "• اضغط  حضور أو  انصراف\n\n";
+                msg += "2⃣ *طلب سلفة:*\n";
+                msg += "• بعد تسجيل الدخول اضغط  طلب سلفة/إذن\n";
+                msg += "• اختر  سلفة وأدخل المبلغ والسبب\n\n";
+                msg += "3⃣ *طلب إذن غياب:*\n";
+                msg += "• بعد تسجيل الدخول اضغط  طلب سلفة/إذن\n";
+                msg += "• اختر  إذن غياب وأدخل السبب والمدة\n\n";
                 msg += "━━━━━━━━━━━━━━━━\n";
-                msg += "⚠️ *تنبيهات مهمة:*\n";
+                msg += "(!) *تنبيهات مهمة:*\n";
                 msg += "• سجل حضورك يومياً في الموعد المحدد\n";
                 msg += "• أي تأخير سيتم احتسابه تلقائياً\n";
                 msg += "• الطلبات تخضع لموافقة الإدارة\n\n";
                 msg += "━━━━━━━━━━━━━━━━\n";
-                msg += "_نتمنى لك يوم عمل موفق_ 🌿\n";
+                msg += "_نتمنى لك يوم عمل موفق_ \n";
                 msg += "*Degla Smart Lab — HR Team*";
                 var url = "https://wa.me/" + ph + "?text=" + encodeURIComponent(msg);
                 window.open(url, "_blank");
@@ -1466,7 +1466,7 @@
                 var html = "";
                 list.forEach(function(r) {
                     var isSal = r.type === "salary";
-                    var badge = isSal ? '<span class="rbg-s">💰 سلفة</span>' : '<span class="rbg-l">📝 إذن</span>';
+                    var badge = isSal ? '<span class="rbg-s"> سلفة</span>' : '<span class="rbg-l"> إذن</span>';
                     var detail = isSal ? '<b>' + (r.amount||"-") + '</b> ج.م' + (r.reason ? " · " + r.reason : "") : 'المدة: <b>' + (r.leaveDuration||"-") + '</b>' + (r.leaveReason ? " · " + r.leaveReason : "");
                     html += '<div class="li" style="flex-direction:column;align-items:flex-start;gap:4px;">';
                     html += '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;"><span style="font-weight:700;font-size:.86rem;">' + r.employeeName + '</span>' + badge + '</div>';
@@ -1481,10 +1481,10 @@
             function saveAbs() {
                 var name = document.getElementById("an").value.trim();
                 var date = document.getElementById("ad").value;
-                if (!name || !date) { toast("⚠️","أدخل الاسم والتاريخ",""); return; }
+                if (!name || !date) { toast("(!)","أدخل الاسم والتاريخ",""); return; }
                 fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addAbsence",name:name,code:document.getElementById("ac").value,date:date,reason:document.getElementById("ar").value})})
-                .then(function() { toast("✅","تم تسجيل الغياب بإذن!",""); ["an","ac","ad","ar"].forEach(function(id) { document.getElementById(id).value=""; }); })
-                .catch(function() { toast("❌","خطأ",""); });
+                .then(function() { toast("","تم تسجيل الغياب بإذن!",""); ["an","ac","ad","ar"].forEach(function(id) { document.getElementById(id).value=""; }); })
+                .catch(function() { toast("","خطأ",""); });
             }
 
 
@@ -1653,15 +1653,71 @@
             }
 
             function sendRepWhatsApp() {
-                if (!_repEmp||!_repEmp.phone){toast("⚠️","مفيش رقم للموظف","");return;}
-                var ph = _repEmp.phone.toString().replace(/[^0-9]/g,"");
-                if(ph.startsWith("0"))ph="2"+ph;
-                var msg = "&#128202; *تقرير الراتب — Degla Smart Lab*\n\n";
-                msg += "الموظف: *"+_repEmp.name+"*\n";
-                msg += "الكود: "+_repEmp.code+"\n";
-                msg += "الشهر: "+document.getElementById("repMonth").value+"\n\n";
-                msg += "_Degla Smart Lab — HR Team_ &#127807;";
-                window.open("https://wa.me/"+ph+"?text="+encodeURIComponent(msg),"_blank");
+                if (!_repEmp || !_repEmp.phone) { toast("!", "مفيش رقم للموظف", ""); return; }
+                var ph = _repEmp.phone.toString().replace(/[^0-9]/g, "");
+                if (ph.startsWith("0")) ph = "2" + ph;
+                var month = document.getElementById("repMonth").value;
+                var mParts = month.split("-");
+                var mNames = ["يناير","فبراير","مارس","ابريل","مايو","يونيو","يوليو","اغسطس","سبتمبر","اكتوبر","نوفمبر","ديسمبر"];
+                var mLabel = mNames[parseInt(mParts[1])-1] + " " + mParts[0];
+                var lines = [];
+                lines.push("*Degla Smart Lab*");
+                lines.push("تقرير راتب شهر " + mLabel);
+                lines.push("================");
+                lines.push("الاسم: *" + _repEmp.name + "*");
+                lines.push("الكود: " + _repEmp.code);
+                lines.push("الراتب الاساسي: " + Number(_repEmp.salary).toLocaleString() + " ج.م");
+                lines.push("================");
+                lines.push("");
+                var cards = document.querySelectorAll(".day-card");
+                for (var ci = 0; ci < cards.length; ci++) {
+                    var dateEl = cards[ci].querySelector(".day-card-date");
+                    var absEl  = cards[ci].querySelector(".day-card-absent");
+                    var netEl  = cards[ci].querySelector(".day-card-net");
+                    if (!dateEl) continue;
+                    var dateText = dateEl.textContent || "";
+                    dateText = dateText.replace(/[^\u0600-\u06FF\s0-9]/g, "").trim();
+                    lines.push("* " + dateText);
+                    if (absEl) {
+                        lines.push("غياب - خصم يوم كامل");
+                    } else {
+                        var shifts = cards[ci].querySelectorAll(".shift-row");
+                        for (var si = 0; si < shifts.length; si++) {
+                            var brEl   = shifts[si].querySelector(".shift-branch-badge");
+                            var inEl   = shifts[si].querySelector(".shift-time-in");
+                            var outEl  = shifts[si].querySelector(".shift-time-out");
+                            var lateEl = shifts[si].querySelector(".shift-tag-late");
+                            var otEl   = shifts[si].querySelector(".shift-tag-ot");
+                            if (brEl) lines.push("الفرع: " + (brEl.textContent||"").replace(/[^\u0600-\u06FF\s]/g,"").trim());
+                            var times = "";
+                            if (inEl)  times += "دخول: " + (inEl.textContent||"").replace(/[^0-9:]/g,"").trim();
+                            if (outEl) times += " | خروج: " + (outEl.textContent||"").replace(/[^0-9:]/g,"").trim();
+                            if (times) lines.push(times);
+                            if (lateEl) lines.push("تاخير: " + (lateEl.textContent||"").replace(/[^\u0600-\u06FF\s0-9]/g,"").trim());
+                            if (otEl)   lines.push("اوفر تايم: " + (otEl.textContent||"").replace(/[^\u0600-\u06FF\s0-9]/g,"").trim());
+                        }
+                        if (netEl) lines.push("صافي اليوم: " + (netEl.textContent||"").replace(/[^0-9,.]/g,"").trim() + " ج.م");
+                    }
+                    lines.push("----------------");
+                }
+                lines.push("");
+                lines.push("الاجمالي");
+                lines.push("================");
+                var sumRows = document.querySelectorAll(".rep-sum-row");
+                for (var ri = 0; ri < sumRows.length; ri++) {
+                    var lbl = sumRows[ri].querySelector(".rep-sum-lbl");
+                    var val = sumRows[ri].querySelector(".rep-sum-val");
+                    if (lbl && val) lines.push(lbl.textContent.trim() + ": " + val.textContent.trim());
+                }
+                var netBox = document.querySelector(".rep-net-val");
+                if (netBox) {
+                    lines.push("================");
+                    lines.push("صافي الراتب: *" + netBox.textContent.trim() + "*");
+                }
+                lines.push("================");
+                lines.push("_Degla Smart Lab - HR Team_");
+                var msg = lines.join("\n");
+                window.open("https://wa.me/" + ph + "?text=" + encodeURIComponent(msg), "_blank");
             }
 
             // TOAST
