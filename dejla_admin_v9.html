@@ -827,14 +827,14 @@
         <!-- PIN MODAL -->
         <div class="pmodal" id="pinModal">
             <div class="pbox">
-                <div style="font-size:2rem;margin-bottom:8px;">🗑️</div>
-                <div class="ptitle">تأكيد الحذف</div>
-                <div class="psub">أدخل PIN الإدارة لإزالة الموظف من القوة</div>
+                <div style="font-size:2rem;margin-bottom:8px;">&#9940;</div>
+                <div class="ptitle" id="pinTitle">تأكيد الإيقاف</div>
+                <div class="psub" id="pinSub">أدخل PIN الإدارة لإيقاف الموظف</div>
                 <input type="password" class="pinput" id="pinInput" maxlength="6" inputmode="numeric" placeholder="••••"/>
-                <div class="perr" id="pinErr">❌ PIN غير صحيح</div>
+                <div class="perr" id="pinErr">PIN غير صحيح</div>
                 <div class="pbtns">
                     <button class="btn bno" onclick="closePinModal()">إلغاء</button>
-                    <button class="btn" style="background:var(--r);color:white;" id="delConfirmBtn" onclick="confirmDelete()">تأكيد</button>
+                    <button class="btn" style="background:var(--r);color:white;" id="delConfirmBtn" onclick="confirmDelete()">تأكيد الإيقاف</button>
                 </div>
             </div>
         </div>
@@ -1224,19 +1224,21 @@
             }
 
             function buildActiveCard(e, status, idx) {
-                var badge = status === "in" ? '<span class="badge bg"> حاضر</span>' : status === "out" ? '<span class="badge br2"> انصرف</span>' : '<span class="badge bgray">⚪ غياب</span>';
+                var attBadge = status === "in" ? '<span class="badge bg">&#128994; حاضر</span>' : status === "out" ? '<span class="badge br2">&#128308; انصرف</span>' : '<span class="badge bgray">&#9899; غياب</span>';
+                var statusBadge = '<span class="badge bg" style="font-size:.65rem;">&#10003; نشط — على القوة</span>';
                 var h = '<div class="emp-card"><div class="ec-head">';
+                h += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
+                h += statusBadge;
                 h += '<div class="ec-av" style="background:var(--gl);color:var(--gd);">' + e.name.charAt(0) + '</div>';
-                h += '<div class="ec-info"><div class="ec-name">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div>' + badge + '</div>';
+                h += '</div>';
+                h += '<div class="ec-info"><div class="ec-name">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div>' + attBadge + '</div>';
                 h += '<div class="ec-body">';
                 h += '<div><div class="ec-stat-lbl">الراتب</div><div class="ec-stat-val">' + (e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "—") + '</div></div>';
-                h += '<div><div class="ec-stat-lbl">الحالة</div><div class="ec-stat-val"><span class="badge bg">نشط</span></div></div>';
                 h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.phone || "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">رقم البطاقة</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.nationalId || "—") + '</div></div>';
                 h += '</div><div class="ec-actions">';
-                h += '<button class="ec-edit" data-idx="' + idx + '" onclick="openEditIdx(parseInt(this.dataset.idx))">✏ تعديل</button>';
-                h += '<button class="ec-del" data-code="' + e.code + '" data-type="deactivate" onclick="askDel(this.dataset.code,this.dataset.type)">(x) إيقاف</button>';
-                h += '<button class="ec-edit" style="background:#e3f2fd;color:#1565c0;" data-code="' + e.code + '" data-name="' + e.name + '" onclick="openSalary(this.dataset.code,this.dataset.name)"> راتب</button>';
+                h += '<button class="ec-edit" data-idx="' + idx + '" onclick="openEditIdx(parseInt(this.dataset.idx))">&#9999; تعديل</button>';
+                h += '<button class="ec-del" data-code="' + e.code + '" data-type="deactivate" onclick="askDel(this.dataset.code,this.dataset.type)">&#9940; إيقاف</button>';
                 h += '</div></div>';
                 return h;
             }
@@ -1287,6 +1289,16 @@
                 pendingDelCode = code; pendingDelType = type;
                 document.getElementById("pinInput").value = "";
                 document.getElementById("pinErr").style.display = "none";
+                // تغيير النصوص حسب النوع
+                if (type === "delete") {
+                    document.getElementById("pinTitle").textContent = "تأكيد الحذف النهائي";
+                    document.getElementById("pinSub").textContent = "أدخل PIN الإدارة للحذف النهائي للموظف";
+                    document.getElementById("delConfirmBtn").textContent = "تأكيد الحذف";
+                } else {
+                    document.getElementById("pinTitle").textContent = "تأكيد الإيقاف";
+                    document.getElementById("pinSub").textContent = "أدخل PIN الإدارة لإيقاف الموظف";
+                    document.getElementById("delConfirmBtn").textContent = "تأكيد الإيقاف";
+                }
                 document.getElementById("pinModal").classList.add("show");
                 setTimeout(function() { document.getElementById("pinInput").focus(); }, 150);
             }
