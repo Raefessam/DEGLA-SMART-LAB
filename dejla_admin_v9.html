@@ -762,7 +762,14 @@
             .rep-ec-name{font-weight:900;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
             .rep-ec-meta{font-size:.68rem;color:var(--m);margin-top:2px;}
             .rep-ec-btn{padding:9px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--g),var(--gd));color:white;font-family:"Cairo",sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap;}
-            @media print{.bnav,.topbar,.rep-filter,.rep-print-btns,.rb{display:none !important;}}
+            @media print{
+                .bnav,.topbar,.rep-filter,.rep-print-btns,.rb,.btn,.xbtn{display:none !important;}
+                body{background:white;}
+                .day-card{break-inside:avoid;page-break-inside:avoid;}
+                #repPrintHeader{-webkit-print-color-adjust:exact;print-color-adjust:exact;background:#2d6e0e !important;}
+                .rep-emp-header{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+                .rep-net-box{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+            }
 
         </style>
     </head>
@@ -1650,6 +1657,25 @@
                     document.getElementById("repContent").innerHTML = h;
                     document.getElementById("repPrintBtns").style.display = "grid";
                 }).catch(function(){document.getElementById("repContent").innerHTML='<div class="empty">تعذر تحميل البيانات</div>';});
+            }
+
+            function printRep() {
+                var month = document.getElementById("repMonth").value || "";
+                var parts = month.split("-");
+                var mNames = ["يناير","فبراير","مارس","ابريل","مايو","يونيو","يوليو","اغسطس","سبتمبر","اكتوبر","نوفمبر","ديسمبر"];
+                var mLabel = mNames[parseInt(parts[1]||1)-1] + " " + (parts[0]||"");
+                var pa = document.getElementById("repContent");
+                if (!pa) { window.print(); return; }
+                var hdr = document.createElement("div");
+                hdr.id = "repPrintHeader";
+                hdr.style.cssText = "text-align:center;padding:16px;background:#2d6e0e;color:white;border-radius:12px;margin-bottom:16px;";
+                hdr.innerHTML = "<div style='font-size:1.2rem;font-weight:900;'>Degla Smart Lab</div>" +
+                    "<div style='font-size:.85rem;margin-top:4px;opacity:.85;'>تقرير راتب شهر " + mLabel + "</div>" +
+                    "<div style='font-size:.8rem;margin-top:8px;border-top:1px solid rgba(255,255,255,.3);padding-top:8px;'>" +
+                    "الاسم: " + (_repEmp ? _repEmp.name : "") + " | الكود: " + (_repEmp ? _repEmp.code : "") + " | الراتب: " + (_repEmp ? Number(_repEmp.salary).toLocaleString() : "") + " ج.م</div>";
+                pa.insertBefore(hdr, pa.firstChild);
+                window.print();
+                setTimeout(function(){ var h=document.getElementById("repPrintHeader"); if(h)h.remove(); }, 800);
             }
 
             function sendRepWhatsApp() {
