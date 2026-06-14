@@ -1493,6 +1493,13 @@
             var _dNames = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
             var _mNames = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
+            function searchReps(q) {
+                var cards = document.querySelectorAll('.rep-ec-card');
+                for (var i = 0; i < cards.length; i++) {
+                    var nm = cards[i].querySelector('.rep-ec-name');
+                    if (nm) cards[i].style.display = nm.textContent.toLowerCase().indexOf((q||'').toLowerCase()) >= 0 ? '' : 'none';
+                }
+            }
             function loadRepList() {
                 document.getElementById("repList").style.display = "block";
                 document.getElementById("repDetail").style.display = "none";
@@ -1503,6 +1510,7 @@
                     var emps = (d.employees||[]).filter(function(e){return e.name&&e.name.trim();});
                     if (!emps.length) { document.getElementById("repList").innerHTML = '<div class="empty">لا يوجد موظفون</div>'; return; }
                     var h = '<div class="stitle">التقارير والرواتب</div>';
+                    h += '<input type="text" id="repSearch" oninput="searchReps(this.value)" placeholder="بحث عن موظف..." style="width:100%;padding:11px 14px;border:2px solid var(--b3);border-radius:12px;font-family:Cairo,sans-serif;font-size:.88rem;outline:none;background:white;margin-bottom:10px;"/>';
                     emps.forEach(function(e) {
                         var av = e.name.charAt(0)||"م";
                         var sal = e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "";
