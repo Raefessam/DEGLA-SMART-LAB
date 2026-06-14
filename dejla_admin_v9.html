@@ -766,13 +766,22 @@
                 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
                 .bnav,.topbar,.rep-filter,.rep-print-btns,.rb,.btn,.xbtn,.rep-back-btn { display:none !important; }
                 body { background: white; margin: 0; padding: 0; }
-                .cnt { padding: 0 !important; padding-bottom: 0 !important; }
-                #s5 { padding: 10px; }
+                .cnt { 
+                    padding: 0 !important; 
+                    padding-bottom: 0 !important; 
+                    overflow: visible !important;
+                    height: auto !important;
+                    max-height: none !important;
+                }
+                #app { overflow: visible !important; height: auto !important; }
+                #s5 { display: block !important; padding: 10px; overflow: visible !important; }
+                #repDetail { display: block !important; overflow: visible !important; }
+                #repContent { overflow: visible !important; height: auto !important; }
                 .day-card { break-inside: avoid; page-break-inside: avoid; margin-bottom: 8px; }
                 .rep-summary { break-inside: avoid; }
-                #repPrintHeader { background: #2d6e0e !important; color: white !important; }
+                #repPrintHeader { background: #2d6e0e !important; color: white !important; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
                 .rep-net-box { background: linear-gradient(135deg,#4e9012,#2d5a0e) !important; color: white !important; }
-                .rep-emp-header { background: linear-gradient(135deg,#4e9012,#2d5a0e) !important; color: white !important; }
+                .rep-emp-header { display: none !important; }
                 .day-card-absent { background: #fdecea !important; }
                 .day-card-head { background: #f4fbec !important; }
             }
