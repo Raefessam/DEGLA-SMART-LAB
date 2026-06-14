@@ -1224,36 +1224,39 @@
             }
 
             function buildActiveCard(e, status, idx) {
-                var attBadge = status === "in" ? '<span class="badge bg">&#128994; حاضر</span>' : status === "out" ? '<span class="badge br2">&#128308; انصرف</span>' : '<span class="badge bgray">&#9899; غياب</span>';
-                var statusBadge = '<span class="badge bg" style="font-size:.65rem;">&#10003; نشط — على القوة</span>';
+                // زرار toggle الحالة - نشط
+                var toggleBtn = '<button onclick="askDel(\'' + e.code + '\',\'deactivate\')" style="background:var(--gl);color:var(--gd);border:none;border-radius:20px;padding:5px 10px;font-family:Cairo,sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;">&#128994; نشط</button>';
                 var h = '<div class="emp-card"><div class="ec-head">';
-                h += '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">';
-                h += statusBadge;
+                h += '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">';
+                h += toggleBtn;
                 h += '<div class="ec-av" style="background:var(--gl);color:var(--gd);">' + e.name.charAt(0) + '</div>';
                 h += '</div>';
-                h += '<div class="ec-info"><div class="ec-name">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div>' + attBadge + '</div>';
+                h += '<div class="ec-info"><div class="ec-name">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div></div>';
                 h += '<div class="ec-body">';
                 h += '<div><div class="ec-stat-lbl">الراتب</div><div class="ec-stat-val">' + (e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.phone || "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">رقم البطاقة</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.nationalId || "—") + '</div></div>';
                 h += '</div><div class="ec-actions">';
                 h += '<button class="ec-edit" data-idx="' + idx + '" onclick="openEditIdx(parseInt(this.dataset.idx))">&#9999; تعديل</button>';
-                h += '<button class="ec-del" data-code="' + e.code + '" data-type="deactivate" onclick="askDel(this.dataset.code,this.dataset.type)">&#9940; إيقاف</button>';
                 h += '</div></div>';
                 return h;
             }
 
             function buildInactiveCard(e, idx) {
+                // زرار toggle الحالة - غير نشط
+                var toggleBtn = '<button onclick="activateEmp(\'' + e.code + '\')" style="background:#f5f5f5;color:var(--m);border:none;border-radius:20px;padding:5px 10px;font-family:Cairo,sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;">&#9899; غير نشط</button>';
                 var h = '<div class="emp-card" style="opacity:.85;border-style:dashed;">';
-                h += '<div class="ec-head"><div class="ec-av" style="background:#f5f5f5;color:var(--m);">' + e.name.charAt(0) + '</div>';
-                h += '<div class="ec-info"><div class="ec-name" style="color:var(--m);">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div>';
-                h += '<span class="badge bgray">خارج القوة</span></div>';
+                h += '<div class="ec-head">';
+                h += '<div style="display:flex;flex-direction:column;align-items:center;gap:6px;">';
+                h += toggleBtn;
+                h += '<div class="ec-av" style="background:#f5f5f5;color:var(--m);">' + e.name.charAt(0) + '</div>';
+                h += '</div>';
+                h += '<div class="ec-info"><div class="ec-name" style="color:var(--m);">' + e.name + '</div><div class="ec-meta">' + e.code + '</div></div></div>';
                 h += '<div class="ec-body">';
                 h += '<div><div class="ec-stat-lbl">الراتب</div><div class="ec-stat-val">' + (e.salary ? Number(e.salary).toLocaleString() + " ج.م" : "—") + '</div></div>';
                 h += '<div><div class="ec-stat-lbl">موبايل</div><div class="ec-stat-val" style="font-size:.7rem;">' + (e.phone || "—") + '</div></div>';
                 h += '</div><div class="ec-actions">';
-                h += '<button class="ec-edit" style="background:var(--gl);color:var(--gd);" data-code="' + e.code + '" onclick="activateEmp(this.dataset.code)"> تفعيل</button>';
-                h += '<button class="ec-del" data-code="' + e.code + '" data-type="delete" onclick="askDel(this.dataset.code,this.dataset.type)"> حذف نهائي</button>';
+                h += '<button class="ec-del" data-code="' + e.code + '" data-type="delete" onclick="askDel(this.dataset.code,this.dataset.type)">&#128465; حذف نهائي</button>';
                 h += '</div></div>';
                 return h;
             }
