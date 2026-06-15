@@ -793,6 +793,141 @@
                 .day-card-head { background: #f4fbec !important; }
             }
 
+
+            /* ══ MONTHLY REPORT ══ */
+            .rep-toggle-bar {
+                display: flex; gap: 8px; margin-bottom: 14px;
+                background: var(--b3); border-radius: 12px; padding: 4px;
+            }
+            .rep-toggle-btn {
+                flex: 1; padding: 8px; border: none; border-radius: 9px;
+                font-family: Cairo,sans-serif; font-size: .82rem; font-weight: 700;
+                cursor: pointer; background: transparent; color: var(--m);
+                transition: all .2s;
+            }
+            .rep-toggle-btn.act {
+                background: var(--gd); color: white;
+                box-shadow: 0 2px 8px rgba(45,110,14,.3);
+            }
+            .monthly-filter {
+                background: white; border-radius: 14px; padding: 14px;
+                margin-bottom: 14px; border: 1.5px solid var(--b3);
+            }
+            .monthly-filter label {
+                font-size: .78rem; color: var(--m); font-weight: 700;
+            }
+            .monthly-filter input {
+                width: 100%; padding: 8px 12px; border: 1.5px solid var(--b3);
+                border-radius: 10px; font-family: Cairo,sans-serif;
+                font-size: .85rem; margin-top: 6px; color: var(--t);
+            }
+            .monthly-run-btn {
+                width: 100%; padding: 12px; border: none; border-radius: 12px;
+                background: linear-gradient(135deg,var(--g),var(--gd));
+                color: white; font-family: Cairo,sans-serif;
+                font-size: .9rem; font-weight: 700; cursor: pointer;
+                margin-top: 10px; box-shadow: 0 3px 10px rgba(78,144,18,.3);
+            }
+            /* جدول الموظفين */
+            .monthly-table-wrap {
+                overflow-x: auto; border-radius: 14px;
+                border: 1.5px solid var(--b3); margin-bottom: 14px;
+            }
+            .monthly-table {
+                width: 100%; border-collapse: collapse;
+                font-size: .75rem; font-family: Cairo,sans-serif;
+                min-width: 600px;
+            }
+            .monthly-table th {
+                background: var(--gd); color: white;
+                padding: 10px 8px; text-align: center;
+                font-weight: 700; white-space: nowrap;
+            }
+            .monthly-table td {
+                padding: 9px 8px; text-align: center;
+                border-bottom: 1px solid var(--b3); color: var(--t);
+            }
+            .monthly-table tr:last-child td { border-bottom: none; }
+            .monthly-table tr:nth-child(even) td { background: var(--b2); }
+            .monthly-table tr:hover td { background: #f0f9e8; }
+            .monthly-table .td-name {
+                text-align: right; font-weight: 700;
+                color: var(--t); min-width: 120px;
+            }
+            .monthly-table .td-net {
+                font-weight: 900; color: var(--gd);
+            }
+            .monthly-table .td-net.negative { color: var(--r); }
+            .monthly-table .td-deduct { color: var(--r); }
+            .monthly-table .td-ot { color: var(--gd); }
+            .monthly-table .td-loan { color: #7b1fa2; }
+            /* إجمالي */
+            .monthly-total {
+                background: white; border-radius: 14px;
+                border: 1.5px solid var(--b3); overflow: hidden;
+                margin-bottom: 14px;
+            }
+            .monthly-total-header {
+                background: var(--gd); color: white;
+                padding: 10px 14px; font-size: .88rem; font-weight: 900;
+                display: flex; align-items: center; gap: 6px;
+            }
+            .monthly-total-row {
+                display: flex; justify-content: space-between;
+                align-items: center; padding: 9px 14px;
+                border-bottom: 1px solid var(--b3); font-size: .82rem;
+            }
+            .monthly-total-row:last-child { border-bottom: none; }
+            .monthly-total-lbl { color: var(--m); }
+            .monthly-total-val { font-weight: 700; }
+            .monthly-net-box {
+                background: linear-gradient(135deg,#4e9012,#2d6e0e);
+                color: white; padding: 14px; text-align: center;
+                margin: 0;
+            }
+            .monthly-net-lbl { font-size: .78rem; opacity: .85; }
+            .monthly-net-val { font-size: 1.6rem; font-weight: 900; margin-top: 4px; }
+            /* إحصائيات */
+            .monthly-stats {
+                display: grid; grid-template-columns: 1fr 1fr;
+                gap: 10px; margin-bottom: 14px;
+            }
+            .monthly-stat-card {
+                background: white; border-radius: 12px;
+                border: 1.5px solid var(--b3); padding: 12px;
+                text-align: center;
+            }
+            .monthly-stat-icon { font-size: 1.3rem; margin-bottom: 4px; }
+            .monthly-stat-val {
+                font-size: 1rem; font-weight: 900; color: var(--gd);
+                margin-bottom: 2px;
+            }
+            .monthly-stat-lbl { font-size: .68rem; color: var(--m); }
+            /* تحذيرات */
+            .monthly-alerts {
+                background: #fff8e1; border-radius: 12px;
+                border: 1.5px solid #ffe082; padding: 12px;
+                margin-bottom: 14px;
+            }
+            .monthly-alert-title {
+                font-size: .8rem; font-weight: 900; color: #e65100;
+                margin-bottom: 8px;
+            }
+            .monthly-alert-item {
+                font-size: .75rem; color: #bf360c; padding: 4px 0;
+                border-bottom: 1px solid #ffe082; display: flex;
+                align-items: center; gap: 6px;
+            }
+            .monthly-alert-item:last-child { border-bottom: none; }
+            /* واتساب رواتب */
+            .monthly-wa-btn {
+                width: 100%; padding: 12px; border: none; border-radius: 12px;
+                background: linear-gradient(135deg,#25D366,#128C7E);
+                color: white; font-family: Cairo,sans-serif;
+                font-size: .88rem; font-weight: 700; cursor: pointer;
+                margin-bottom: 8px;
+            }
+
         </style>
     </head>
     <body>
@@ -968,6 +1103,14 @@
 
                 <!-- REPORT s5 -->
                 <div class="sec" id="s5">
+                    <!-- toggle: فردي / شهري -->
+                    <div class="rep-toggle-bar">
+                        <button class="rep-toggle-btn act" id="repToggleInd" onclick="switchRepMode('individual')">&#128100; تقرير فردي</button>
+                        <button class="rep-toggle-btn" id="repToggleMon" onclick="switchRepMode('monthly')">&#128202; تقرير شهري كامل</button>
+                    </div>
+
+                    <!-- محتوى الوضع الفردي -->
+                    <div id="repIndividual">
                     <!-- قائمة الموظفين للتقرير -->
                     <div id="repList">
                         <div class="ldots"><span class="ld"></span><span class="ld" style="animation-delay:.2s"></span><span class="ld" style="animation-delay:.4s"></span></div>
@@ -1042,6 +1185,20 @@
                 <div class="ni" onclick="sw(4,this)">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     <span>الطلبات</span>
+
+                    </div><!-- end repIndividual -->
+
+                    <!-- محتوى التقرير الشهري -->
+                    <div id="repMonthly" style="display:none;">
+                        <!-- فلتر -->
+                        <div class="monthly-filter">
+                            <label>اختار الشهر</label>
+                            <input type="month" id="monthlyMonth"/>
+                            <button class="monthly-run-btn" onclick="loadMonthlyReport()">&#128202; عرض التقرير الشهري الكامل</button>
+                        </div>
+                        <!-- المحتوى -->
+                        <div id="monthlyContent"></div>
+                    </div>
                 </div>
                 
             </nav>
@@ -1360,6 +1517,237 @@
                     btn.disabled=false; btn.textContent="عرض التقرير";
                     document.getElementById("salReportContent").innerHTML = '<div class="empty">تعذر التحميل</div>';
                 });
+            }
+
+            // ══ MONTHLY REPORT ══
+            var _monthlyMode = "individual";
+
+            function switchRepMode(mode) {
+                _monthlyMode = mode;
+                document.getElementById("repIndividual").style.display = mode === "individual" ? "block" : "none";
+                document.getElementById("repMonthly").style.display = mode === "monthly" ? "block" : "none";
+                document.getElementById("repToggleInd").className = "rep-toggle-btn" + (mode === "individual" ? " act" : "");
+                document.getElementById("repToggleMon").className = "rep-toggle-btn" + (mode === "monthly" ? " act" : "");
+                if (mode === "monthly") {
+                    var now = new Date();
+                    var m = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+                    document.getElementById("monthlyMonth").value = m;
+                }
+            }
+
+            function loadMonthlyReport() {
+                var month = document.getElementById("monthlyMonth").value;
+                if (!month) { toast("(!)", "اختار الشهر الأول", ""); return; }
+                document.getElementById("monthlyContent").innerHTML = ldHTML();
+
+                Promise.all([
+                    fetch(URL + "?action=getEmployees").then(function(r){return r.json();}),
+                    fetch(URL + "?action=getAttendance").then(function(r){return r.json();}),
+                    fetch(URL + "?action=getRequests").then(function(r){return r.json();})
+                ]).then(function(results) {
+                    var emps = (results[0].employees || []).filter(function(e){ return e.status === "نشط" && e.salary; });
+                    var allRecs = results[1].records || [];
+                    var allReqs2 = results[2].requests || [];
+
+                    var parts = month.split("-");
+                    var yr = parseInt(parts[0]), mn = parseInt(parts[1])-1;
+                    var dim = new Date(yr,mn+1,0).getDate();
+                    var wd = 0;
+                    for (var d=1;d<=dim;d++){if(new Date(yr,mn,d).getDay()!==5)wd++;}
+                    var mNames2 = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+                    // حساب كل موظف
+                    var empResults = [];
+                    var totalBasic = 0, totalDeduct = 0, totalOT = 0, totalLoans2 = 0, totalLeaveD = 0, totalNet = 0;
+                    var maxPresent = {name:"", days:0}, maxAbsent = {name:"", days:0};
+                    var alerts = [];
+                    var totalPresenceDays = 0;
+
+                    emps.forEach(function(emp) {
+                        var salary = parseFloat(emp.salary) || 0;
+                        var spd = salary / (wd||1);
+                        var sph = spd / 8;
+
+                        // سجلات الحضور
+                        var recs = allRecs.filter(function(r){
+                            return r.code === emp.code && r.date && r.date.startsWith(month);
+                        });
+                        var dm2 = {};
+                        recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
+
+                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0;
+                        for (var d2=1;d2<=dim;d2++){
+                            var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
+                            if(new Date(yr,mn,d2).getDay()===5) continue;
+                            var dr2 = dm2[dt] || [];
+                            if (!dr2.length) { absentDays++; lateDeduct += spd; continue; }
+                            presentDays++;
+                            dr2.forEach(function(r){
+                                var tm = r.timing || "";
+                                if(tm.indexOf("تأخير")>=0){
+                                    var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                                    if(ms>=30) lateDeduct+=spd;
+                                    else if(ms>=15) lateDeduct+=spd/2;
+                                    else if(ms>=10) lateDeduct+=sph;
+                                    else if(ms>=5) lateDeduct+=sph/60*10;
+                                }
+                                if(tm.indexOf("أوفر")>=0){
+                                    var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                                    otAmount+=(om/60)*sph*1.5;
+                                }
+                            });
+                        }
+
+                        // الطلبات المعتمدة
+                        var empReqs = allReqs2.filter(function(r){
+                            var st = (r.status||"").toString().trim();
+                            var isApp = st==="approved"||st==="معتمد";
+                            var ts = (r.timestamp||"").toString();
+                            return r.employeeCode===emp.code && isApp && (ts.startsWith(month)||ts.indexOf(month)>=0);
+                        });
+
+                        var loans = 0, leaveDeduct = 0, leaveHrs = 0;
+                        empReqs.forEach(function(r){
+                            var isSal = r.type==="salary"||r.type==="سلفة";
+                            if(isSal){ loans += parseFloat(r.amount)||0; return; }
+                            var dur = (r.leaveDuration||"").toString();
+                            if(dur.indexOf("يوم")>=0){ leaveDeduct += spd/2; }
+                            else {
+                                var hrs=0;
+                                if(dur.indexOf("ساعتين")>=0) hrs=2;
+                                else { var hm=dur.match(/(\d+)/); hrs=hm?parseInt(hm[1]):1; }
+                                leaveHrs+=hrs;
+                                if(leaveHrs>4){ leaveDeduct+=(leaveHrs-4)*sph; }
+                            }
+                        });
+
+                        var netSalary = salary - lateDeduct + otAmount - loans - leaveDeduct;
+
+                        // إحصائيات
+                        totalBasic += salary;
+                        totalDeduct += lateDeduct;
+                        totalOT += otAmount;
+                        totalLoans2 += loans;
+                        totalLeaveD += leaveDeduct;
+                        totalNet += netSalary;
+                        totalPresenceDays += presentDays;
+
+                        if(presentDays > maxPresent.days){ maxPresent = {name:emp.name, days:presentDays}; }
+                        if(absentDays > maxAbsent.days){ maxAbsent = {name:emp.name, days:absentDays}; }
+                        if(absentDays >= 5){ alerts.push(emp.name + " — غياب " + absentDays + " يوم"); }
+                        if(loans >= salary * 0.5){ alerts.push(emp.name + " — سلفة كبيرة (" + Math.round(loans) + " ج.م)"); }
+
+                        empResults.push({
+                            name: emp.name, code: emp.code, branch: emp.branch,
+                            salary: salary, present: presentDays, absent: absentDays,
+                            deduct: Math.round(lateDeduct), ot: Math.round(otAmount),
+                            loans: Math.round(loans), leaveD: Math.round(leaveDeduct),
+                            net: Math.round(netSalary)
+                        });
+                    });
+
+                    // ── بناء HTML ──
+                    var h = "";
+
+                    // إحصائيات سريعة
+                    var avgPresence = emps.length ? Math.round(totalPresenceDays/emps.length) : 0;
+                    var presenceRate = wd ? Math.round(totalPresenceDays/(emps.length*(wd||1))*100) : 0;
+                    h += "<div class='monthly-stats'>";
+                    h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#128100;</div><div class='monthly-stat-val'>" + emps.length + "</div><div class='monthly-stat-lbl'>موظف نشط</div></div>";
+                    h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#9989;</div><div class='monthly-stat-val'>" + presenceRate + "%</div><div class='monthly-stat-lbl'>نسبة الحضور</div></div>";
+                    h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#127942;</div><div class='monthly-stat-val'>" + (maxPresent.name||"—").split(" ")[0] + "</div><div class='monthly-stat-lbl'>أعلى حضور</div></div>";
+                    h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#9888;</div><div class='monthly-stat-val'>" + (maxAbsent.name||"—").split(" ")[0] + "</div><div class='monthly-stat-lbl'>أكثر غياب</div></div>";
+                    h += "</div>";
+
+                    // تنبيهات
+                    if (alerts.length) {
+                        h += "<div class='monthly-alerts'>";
+                        h += "<div class='monthly-alert-title'>&#9888; تنبيهات تحتاج متابعة</div>";
+                        alerts.forEach(function(a){ h += "<div class='monthly-alert-item'>&#9679; " + a + "</div>"; });
+                        h += "</div>";
+                    }
+
+                    // جدول الموظفين
+                    h += "<div class='monthly-table-wrap'><table class='monthly-table'>";
+                    h += "<thead><tr><th>الموظف</th><th>حضور</th><th>غياب</th><th>خصم</th><th>أوفر</th><th>سلف</th><th>إذن</th><th>الصافي</th></tr></thead><tbody>";
+                    empResults.forEach(function(e){
+                        var netClass = e.net < 0 ? "td-net negative" : "td-net";
+                        h += "<tr>";
+                        h += "<td class='td-name'>" + e.name + "<br><span style='font-size:.65rem;color:var(--m);'>" + e.branch + "</span></td>";
+                        h += "<td>" + e.present + "</td>";
+                        h += "<td style='color:var(--r);'>" + e.absent + "</td>";
+                        h += "<td class='td-deduct'>" + (e.deduct?"-"+e.deduct:"—") + "</td>";
+                        h += "<td class='td-ot'>" + (e.ot?"+"+e.ot:"—") + "</td>";
+                        h += "<td class='td-loan'>" + (e.loans?"-"+e.loans:"—") + "</td>";
+                        h += "<td class='td-deduct'>" + (e.leaveD?"-"+e.leaveD:"—") + "</td>";
+                        h += "<td class='" + netClass + "'>" + e.net.toLocaleString() + "</td>";
+                        h += "</tr>";
+                    });
+                    // صف الإجمالي
+                    h += "<tr style='background:#e8f5e0;font-weight:900;'>";
+                    h += "<td class='td-name'>الإجمالي</td><td>—</td><td>—</td>";
+                    h += "<td class='td-deduct'>-" + Math.round(totalDeduct) + "</td>";
+                    h += "<td class='td-ot'>+" + Math.round(totalOT) + "</td>";
+                    h += "<td class='td-loan'>-" + Math.round(totalLoans2) + "</td>";
+                    h += "<td class='td-deduct'>-" + Math.round(totalLeaveD) + "</td>";
+                    h += "<td class='td-net'>" + Math.round(totalNet).toLocaleString() + "</td>";
+                    h += "</tr>";
+                    h += "</tbody></table></div>";
+
+                    // إجمالي الرواتب
+                    h += "<div class='monthly-total'>";
+                    h += "<div class='monthly-total-header'>&#128178; إجمالي رواتب شهر " + mNames2[mn] + " " + yr + "</div>";
+                    h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي الرواتب الأساسية</span><span class='monthly-total-val'>" + Math.round(totalBasic).toLocaleString() + " ج.م</span></div>";
+                    h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي الخصومات</span><span class='monthly-total-val' style='color:var(--r);'>- " + Math.round(totalDeduct).toLocaleString() + " ج.م</span></div>";
+                    h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي الأوفر تايم</span><span class='monthly-total-val' style='color:var(--gd);'>+ " + Math.round(totalOT).toLocaleString() + " ج.م</span></div>";
+                    h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي السلف</span><span class='monthly-total-val' style='color:#7b1fa2;'>- " + Math.round(totalLoans2).toLocaleString() + " ج.م</span></div>";
+                    h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي خصم الإذن</span><span class='monthly-total-val' style='color:var(--r);'>- " + Math.round(totalLeaveD).toLocaleString() + " ج.م</span></div>";
+                    h += "<div class='monthly-net-box'><div class='monthly-net-lbl'>إجمالي صافي الرواتب</div><div class='monthly-net-val'>" + Math.round(totalNet).toLocaleString() + " ج.م</div></div>";
+                    h += "</div>";
+
+                    // زرار واتساب لكل الموظفين
+                    document.getElementById("monthlyContent").innerHTML = h;
+                    // إضافة زرار واتساب بعد innerHTML
+                    var waBtn = document.createElement("button");
+                    waBtn.className = "monthly-wa-btn";
+                    waBtn.textContent = "ارسال الرواتب لكل الموظفين على واتساب";
+                    waBtn.onclick = function() { sendAllSalariesWA(empResults, mNames2[mn] + " " + yr); };
+                    document.getElementById("monthlyContent").appendChild(waBtn);
+                    return;
+
+
+                }).catch(function(){ document.getElementById("monthlyContent").innerHTML = "<div class='empty'>تعذر تحميل البيانات</div>"; });
+            }
+
+            function sendAllSalariesWA(emps, monthLabel) {
+                var i = 0;
+                function sendNext() {
+                    if (i >= emps.length) { toast("", "تم إرسال كل الرواتب!", ""); return; }
+                    var e = emps[i++];
+                    // ابحث عن موبايل الموظف
+                    var emp = allEmps ? allEmps.find(function(x){ return x.code === e.code; }) : null;
+                    var ph = emp ? emp.phone : "";
+                    if (!ph) { sendNext(); return; }
+                    ph = ph.toString().replace(/[^0-9]/g,"");
+                    if (ph.startsWith("0")) ph = "2" + ph;
+                    var nl = "\n";
+                    var msg = "Degla Smart Lab" + nl + nl;
+                    msg += "راتب شهر " + monthLabel + nl;
+                    msg += "━━━━━━━━━━━━━━" + nl;
+                    msg += "الاسم: " + e.name + nl;
+                    msg += "الراتب الاساسي: " + e.salary + " ج.م" + nl;
+                    msg += "ايام الحضور: " + e.present + " يوم" + nl;
+                    if(e.deduct) msg += "خصم التاخير: -" + e.deduct + " ج.م" + nl;
+                    if(e.ot) msg += "اوفر تايم: +" + e.ot + " ج.م" + nl;
+                    if(e.loans) msg += "السلف: -" + e.loans + " ج.م" + nl;
+                    if(e.leaveD) msg += "خصم الاذن: -" + e.leaveD + " ج.م" + nl;
+                    msg += "━━━━━━━━━━━━━━" + nl;
+                    msg += "صافي الراتب: " + e.net + " ج.م" + nl + nl;
+                    msg += "Degla Smart Lab - HR Team";
+                    location.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent(msg);
+                    setTimeout(sendNext, 3000);
+                }
+                sendNext();
             }
 
             // ADD EMPLOYEE
