@@ -1,0 +1,150 @@
+<script>
+
+            function launchConfetti() {
+                var colors = ["#6abf1e","#f0c040","#FFD700","#ffffff","#2d6e0e","#e53935"];
+                for (var i = 0; i < 60; i++) {
+                    (function(i) {
+                        setTimeout(function() {
+                            var c = document.createElement("div");
+                            c.className = "confetti-piece";
+                            var w = (2 + Math.floor(Math.random()*5))+"px";
+                            var h = Math.random()>.5 ? w : (parseInt(w)*2)+"px";
+                            c.style.cssText = "width:"+w+";height:"+h+";left:"+(Math.random()*100)+"vw;top:-12px;background:"+colors[Math.floor(Math.random()*colors.length)]+";animation-duration:"+(1.5+Math.random()*2.5)+"s;";
+                            document.body.appendChild(c);
+                            setTimeout(function(){if(c&&c.parentNode)c.parentNode.removeChild(c);},5000);
+                        }, i*40);
+                    })(i);
+                }
+            }
+
+
+            
+
+var APPS="https://script.google.com/macros/s/AKfycbw1cvcxQdcYI7yP_6zRpCQpiOfihGGzRPkBwkOEZaTYQWEIoez_qhVJ7BkklLXfRn_PSg/exec";
+var empData=null,clockTimer=null;
+
+setTimeout(function(){
+    var s=document.getElementById("splash");
+    s.style.transition="opacity 0.5s"; s.style.opacity="0";
+    setTimeout(function(){ s.style.display="none"; },550);
+},2200);
+
+function startClock(){ updateClock(); clockTimer=setInterval(updateClock,1000); }
+function updateClock(){
+    var now=new Date();
+    var h=String(now.getHours()).padStart(2,"0");
+    var m=String(now.getMinutes()).padStart(2,"0");
+    var s=String(now.getSeconds()).padStart(2,"0");
+    document.getElementById("clockDisp").textContent=h+":"+m+":"+s;
+    updateTimingBadge(h+":"+m);
+}
+function updateTimingBadge(timeStr){
+    if(!empData)return;
+    var b=document.getElementById("timingBadge");
+    var now=toMins(timeStr),start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd);
+    var lateBy=now-start, otBy=now-end-15;
+    if(lateBy>=5&&lateBy<start+60){
+        var label=lateBy>=30?"خصم يوم كامل ⛔":lateBy>=15?"خصم نص يوم ⚠️":lateBy>=10?"خصم ساعة ⚠️":"خصم 10 دقائق";
+        b.innerHTML='<div class="timing-late">⏰ تأخير '+lateBy+' دقيقة — '+label+'</div>';
+    } else if(otBy>0){
+        b.innerHTML='<div class="timing-ot"> أوفر تايم '+Math.round(otBy)+' دقيقة</div>';
+    } else {
+        b.innerHTML='<div class="timing-ok">✅ في الموعد</div>';
+    }
+}
+function toMins(t){ if(!t)return 0; var p=t.split(":"); return parseInt(p[0]||0)*60+parseInt(p[1]||0); }
+
+function verifyEmp(){
+    var name=document.getElementById("empName").value.trim();
+    var code=document.getElementById("empCode").value.trim().toUpperCase();
+    var branch=document.getElementById("empBranch").value;
+    var shift=document.getElementById("empShift").value;
+    if(!name||name.split(" ").filter(Boolean).length<3){toast("⚠️ أدخل الاسم الثلاثي كاملاً");return;}
+    if(!code){toast("⚠️ أدخل كود الموظف");return;}
+    if(!branch){toast("⚠️ اختر الفرع");return;}
+    if(!shift){toast("⚠️ اختر الشيفت");return;}
+    var btn=document.getElementById("verifyBtn");
+    btn.disabled=true; btn.innerHTML='<span class="sp"></span>جاري التحقق...';
+    fetch(APPS+"?action=verifyEmployee&name="+encodeURIComponent(name)+"&code="+encodeURIComponent(code))
+    .then(function(r){return r.json();}).then(function(d){
+        btn.disabled=false; btn.textContent="تحقق من الهوية";
+        if(!d.valid){toast("❌ بيانات غير صحيحة أو الموظف غير نشط");return;}
+        var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:30"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
+        var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
+        empData=d; empData.selectedBranch=branch; empData.selectedShift=shift;
+        empData.shiftStart=times.s; empData.shiftEnd=times.e;
+        document.getElementById("empAvatar").textContent=d.name.trim().charAt(0);
+        document.getElementById("empNameDisp").textContent=d.name;
+        document.getElementById("empBranchDisp").textContent=branch+" • "+shift;
+        document.getElementById("empCodeDisp").textContent=d.code;
+        document.getElementById("shiftDisp").textContent="الشيفت: "+times.s+" — "+times.e;
+        showStep("step2"); startClock();
+    }).catch(function(){btn.disabled=false;btn.textContent="تحقق من الهوية";toast("❌ تعذر الاتصال");});
+}
+
+function register(action){
+    if(!empData)return;
+    var btn=action==="حضور"?document.getElementById("btnIn"):document.getElementById("btnOut");
+    btn.disabled=true;
+    var now=new Date();
+    var timeStr=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+    var start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd),cur=toMins(timeStr);
+    var timing="";
+    if(action==="حضور"){var late=cur-start;if(late>=5)timing="تأخير "+late+" دقيقة";}
+    else{var ot=cur-end-15;if(ot>0)timing="أوفر تايم "+Math.round(ot)+" دقيقة";}
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:empData.selectedBranch,shift:empData.selectedShift,recordAction:action,timing:timing})})
+    .then(function(){
+        btn.disabled=false;
+        document.getElementById("succIcon").textContent=action==="حضور"?"":"";
+        document.getElementById("succTitle").textContent="تم تسجيل "+action+" بنجاح!";
+        document.getElementById("succSub").textContent=empData.name+" — "+timeStr+(timing?" — "+timing:"");
+        playSound(action==="حضور"?"in":"out"); showStep("step4");
+    }).catch(function(){btn.disabled=false;toast("❌ تعذر التسجيل");});
+}
+
+function switchTab(t){
+    ["salary","leave"].forEach(function(x){
+        document.getElementById("tab-"+x).classList.toggle("on",x===t);
+        document.getElementById("form-"+x).classList.toggle("on",x===t);
+    });
+}
+function sendSalary(){
+    var amt=document.getElementById("salAmount").value;
+    if(!amt){toast("⚠️ أدخل المبلغ");return;}
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value})})
+    .then(function(){toast("✅ تم إرسال طلب السلفة!");document.getElementById("salAmount").value="";document.getElementById("salReason").value="";})
+    .catch(function(){toast("❌ تعذر الإرسال");});
+}
+function sendLeave(){
+    var reason=document.getElementById("leaveReason").value.trim();
+    if(!reason){toast("⚠️ أدخل سبب الإذن");return;}
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"leave",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,leaveReason:reason,leaveDuration:document.getElementById("leaveDur").value,leaveNote:document.getElementById("leaveNote").value})})
+    .then(function(){toast("✅ تم إرسال طلب الإذن!");document.getElementById("leaveReason").value="";document.getElementById("leaveNote").value="";})
+    .catch(function(){toast("❌ تعذر الإرسال");});
+}
+
+function playSound(type){
+    try{if(navigator.vibrate)navigator.vibrate(type==="in"?[80,40,80]:[120]);}catch(e){}
+    try{
+        var c=new(window.AudioContext||window.webkitAudioContext)();
+        if(c.state==="suspended")c.resume();
+        var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
+        o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
+        if(type==="in"){o.frequency.setValueAtTime(392,c.currentTime);o.frequency.linearRampToValueAtTime(523,c.currentTime+.15);o.frequency.linearRampToValueAtTime(659,c.currentTime+.3);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.25,c.currentTime+.05);g.gain.setValueAtTime(0.25,c.currentTime+.25);g.gain.linearRampToValueAtTime(0,c.currentTime+.5);o.start(c.currentTime);o.stop(c.currentTime+.5);}
+        else{o.frequency.setValueAtTime(523,c.currentTime);o.frequency.linearRampToValueAtTime(392,c.currentTime+.2);o.frequency.linearRampToValueAtTime(330,c.currentTime+.4);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.05);g.gain.setValueAtTime(0.2,c.currentTime+.3);g.gain.linearRampToValueAtTime(0,c.currentTime+.55);o.start(c.currentTime);o.stop(c.currentTime+.55);}
+    }catch(e){}
+}
+
+function showStep(id){ document.querySelectorAll(".step").forEach(function(s){s.classList.remove("on");}); document.getElementById(id).classList.add("on"); window.scrollTo(0,0); }
+function goAtt(){ showStep("step2"); }
+function goReq(){ showStep("step3"); }
+function logout(){
+    if(clockTimer)clearInterval(clockTimer); empData=null;
+    document.getElementById("empName").value=""; document.getElementById("empCode").value="";
+    document.getElementById("empBranch").value=""; document.getElementById("empShift").value="";
+    showStep("step1");
+}
+
+var tt;
+function toast(msg){ clearTimeout(tt); var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); tt=setTimeout(function(){t.classList.remove("show");},3200); }
+</script>
