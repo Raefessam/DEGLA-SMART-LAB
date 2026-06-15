@@ -1668,27 +1668,119 @@
                 if (!_repEmp) return;
                 document.getElementById("repContent").innerHTML = ldHTML();
                 document.getElementById("repPrintBtns").style.display = "none";
-                fetch(URL + "?action=getAttendance")
-                .then(function(r){return r.json();})
-                .then(function(d) {
+
+                // جيب الحضور والطلبات مع بعض
+                Promise.all([
+                    fetch(URL + "?action=getAttendance").then(function(r){return r.json();}),
+                    fetch(URL + "?action=getRequests").then(function(r){return r.json();})
+                ]).then(function(results) {
+                    var attData = results[0];
+                    var reqData = results[1];
                     var month = document.getElementById("repMonth").value;
                     var fr = _repRange ? document.getElementById("repFrom").value : null;
                     var to = _repRange ? document.getElementById("repTo").value : null;
-                    var recs = (d.records||[]).filter(function(r) {
+
+                    // فلتر سجلات الحضور
+                    var recs = (attData.records||[]).filter(function(r) {
                         if (r.code !== _repEmp.code) return false;
                         if (!r.date || !r.date.startsWith(month)) return false;
                         if (_repRange && fr && r.date < fr) return false;
                         if (_repRange && to && r.date > to) return false;
                         return true;
                     });
+
+                    // فلتر الطلبات المعتمدة للموظف في الشهر ده
+                    var approvedReqs = (reqData.requests||[]).filter(function(r) {
+                        var st = (r.status||"").toString().trim();
+                        var isApproved = (st === "approved" || st === "معتمد");
+                        var isThisEmp = r.employeeCode === _repEmp.code;
+                        var ts = (r.timestamp||"").toString();
+                        var isThisMonth = ts.startsWith(month) || ts.indexOf(month) >= 0;
+                        return isApproved && isThisEmp && isThisMonth;
+                    });
+
+                    // حساب السلف المعتمدة
+                    var totalLoans = 0;
+                    var loanCards = "";
+                    approvedReqs.forEach(function(r) {
+                        var isSal = r.type === "salary" || r.type === "سلفة";
+                        if (isSal) {
+                            var amt = parseFloat(r.amount) || 0;
+                            totalLoans += amt;
+                            var ts = (r.timestamp||"").toString().substring(0,10);
+                            loanCards += "<div class='day-card' style='border-color:#e0b4ff;'>";
+                            loanCards += "<div class='day-card-head' style='background:#f9f0ff;'>";
+                            loanCards += "<div class='day-card-date'>&#128176; سلفة معتمدة — " + ts + "</div>";
+                            loanCards += "<div class='day-card-absent' style='background:#9c27b0;color:white;border-radius:8px;padding:2px 8px;'>- " + amt + " ج.م</div>";
+                            loanCards += "</div>";
+                            loanCards += "<div class='day-card-body' style='color:#7b1fa2;font-size:.78rem;'>سلفة معتمدة بمبلغ " + amt + " ج.م — سبب: " + (r.reason||"—") + "</div>";
+                            loanCards += "</div>";
+                        }
+                    });
+
+                    // حساب خصم الإذن المعتمد
+                    var totalLeaveDeduct = 0;
+                    var leaveHoursThisMonth = 0;
+                    var leaveCards = "";
+                    approvedReqs.forEach(function(r) {
+                        var isLeave = r.type === "leave" || r.type === "إذن";
+                        if (!isLeave) return;
+                        var dur = (r.leaveDuration||"").toString();
+                        var ts = (r.timestamp||"").toString().substring(0,10);
+                        var parts2 = month.split("-");
+                        var yr2 = parseInt(parts2[0]), mn2 = parseInt(parts2[1])-1;
+                        var dim2 = new Date(yr2,mn2+1,0).getDate();
+                        var wd2 = 0;
+                        for (var d4=1;d4<=dim2;d4++){if(new Date(yr2,mn2,d4).getDay()!==5)wd2++;}
+                        var spd2 = _repEmp.salary/(wd2||1);
+                        var sph2 = spd2/8;
+                        var deduct = 0;
+                        var deductLabel = "";
+                        if (dur.indexOf("يوم") >= 0) {
+                            // إذن يوم كامل = خصم نص يوم
+                            deduct = spd2 / 2;
+                            deductLabel = "خصم نص يوم (" + Math.round(deduct) + " ج.م)";
+                        } else {
+                            // إذن بالساعات
+                            var hrs = 0;
+                            if (dur.indexOf("ساعتين") >= 0) hrs = 2;
+                            else { var hm = dur.match(/(\d+)/); hrs = hm ? parseInt(hm[1]) : 1; }
+                            leaveHoursThisMonth += hrs;
+                            if (leaveHoursThisMonth > 4) {
+                                var extraHrs = leaveHoursThisMonth - 4;
+                                deduct = extraHrs * sph2;
+                                deductLabel = "خصم " + extraHrs + " ساعة زيادة (" + Math.round(deduct) + " ج.م)";
+                            } else {
+                                deductLabel = "إذن " + dur + " — بدون خصم (مجموع الشهر: " + leaveHoursThisMonth + " ساعات)";
+                            }
+                        }
+                        totalLeaveDeduct += deduct;
+                        var cardColor = deduct > 0 ? "var(--r)" : "var(--gd)";
+                        var cardBg = deduct > 0 ? "#fff0f0" : "#f4fbec";
+                        var cardBorder = deduct > 0 ? "#ffcdd2" : "#c8e6c9";
+                        leaveCards += "<div class='day-card' style='border-color:" + cardBorder + ";'>";
+                        leaveCards += "<div class='day-card-head' style='background:" + cardBg + ";'>";
+                        leaveCards += "<div class='day-card-date'>&#128203; إذن معتمد — " + ts + "</div>";
+                        if (deduct > 0) leaveCards += "<div class='day-card-absent' style='background:var(--r);color:white;border-radius:8px;padding:2px 8px;'>- " + Math.round(deduct) + " ج.م</div>";
+                        else leaveCards += "<div class='day-card-absent' style='background:var(--gl);color:var(--gd);border-radius:8px;padding:2px 8px;'>بدون خصم</div>";
+                        leaveCards += "</div>";
+                        leaveCards += "<div class='day-card-body' style='color:" + cardColor + ";font-size:.78rem;'>المدة: " + dur + (r.leaveReason ? " — " + r.leaveReason : "") + "<br>" + deductLabel + "</div>";
+                        leaveCards += "</div>";
+                    });
+
+                    // حسابات الشهر
                     var parts = month.split("-");
                     var yr = parseInt(parts[0]), mn = parseInt(parts[1])-1;
                     var dim = new Date(yr,mn+1,0).getDate();
                     var wd = 0;
                     for (var d2=1;d2<=dim;d2++){if(new Date(yr,mn,d2).getDay()!==5)wd++;}
                     var spd = _repEmp.salary/(wd||1), sph = spd/8, spm = sph/60;
+
+                    // بناء dayMap
                     var dm = {};
                     recs.forEach(function(r){if(!dm[r.date])dm[r.date]=[];dm[r.date].push(r);});
+
+                    // قائمة الأيام
                     var days = [];
                     for (var d3=1;d3<=dim;d3++){
                         var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d3).padStart(2,"0");
@@ -1697,6 +1789,7 @@
                         if(new Date(yr,mn,d3).getDay()===5)continue;
                         days.push(dt);
                     }
+
                     var tp=0,ta=0,tla=0,toa=0,h="";
                     days.forEach(function(dt){
                         var dr=dm[dt]||[];
@@ -1704,8 +1797,8 @@
                         var dlbl=_dNames[dobj.getDay()]+" "+dobj.getDate()+" "+_mNames[dobj.getMonth()];
                         if(!dr.length){
                             ta++;tla+=spd;
-                            h+='<div class="day-card"><div class="day-card-head"><div class="day-card-date">&#128197; '+dlbl+'</div><div class="day-card-absent">غياب</div></div>';
-                            h+='<div class="day-card-body" style="color:var(--r);font-size:.8rem;font-weight:700;">&#9940; غياب — خصم يوم كامل ('+Math.round(spd)+' ج.م)</div></div>';
+                            h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div class='day-card-absent'>غياب</div></div>";
+                            h+="<div class='day-card-body' style='color:var(--r);font-size:.8rem;font-weight:700;'>&#9940; غياب — خصم يوم كامل ("+Math.round(spd)+" ج.م)</div></div>";
                             return;
                         }
                         tp++;
@@ -1732,33 +1825,41 @@
                                 oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
                             }
                             dl+=la;doa+=oa;tla+=la;toa+=oa;
-                            sh+='<div class="shift-row"><div style="font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;">';
-                            sh+='<span class="shift-branch-badge">&#127970; '+(br||"—")+'</span>';
-                            if(sf)sh+='<span style="font-size:.65rem;color:var(--m);">'+sf+'</span>';
-                            sh+='</div><div class="shift-times"><span class="shift-time-in">&#9650; '+it+'</span>';
-                            if(ot!=="--")sh+='<span class="shift-time-out">&#9660; '+ot+'</span>';
-                            else sh+='<span style="font-size:.72rem;color:var(--m);">انصراف لم يسجل</span>';
-                            sh+='</div>';
-                            if(ll||ol){sh+='<div class="shift-tags">';if(ll)sh+='<span class="shift-tag-late">&#9888; '+tm+' — '+ll+'</span>';if(ol)sh+='<span class="shift-tag-ot">&#11088; '+ol+'</span>';sh+='</div>';}
-                            sh+='</div>';
+                            sh+="<div class='shift-row'><div style='font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;'>";
+                            sh+="<span class='shift-branch-badge'>&#127970; "+(br||"—")+"</span>";
+                            if(sf)sh+="<span style='font-size:.65rem;color:var(--m);'>"+sf+"</span>";
+                            sh+="</div><div class='shift-times'><span class='shift-time-in'>&#9650; "+it+"</span>";
+                            if(ot!=="--")sh+="<span class='shift-time-out'>&#9660; "+ot+"</span>";
+                            else sh+="<span style='font-size:.72rem;color:var(--m);'>انصراف لم يسجل</span>";
+                            sh+="</div>";
+                            if(ll||ol){sh+="<div class='shift-tags'>";if(ll)sh+="<span class='shift-tag-late'>&#9888; "+tm+" — "+ll+"</span>";if(ol)sh+="<span class='shift-tag-ot'>&#11088; "+ol+"</span>";sh+="</div>";}
+                            sh+="</div>";
                         });
                         var dn=spd-dl+doa;
-                        h+='<div class="day-card"><div class="day-card-head"><div class="day-card-date">&#128197; '+dlbl+'</div><div class="day-card-net">&#128176; '+Math.round(dn)+' ج.م</div></div><div class="day-card-body">'+sh+'</div></div>';
+                        h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div class='day-card-net'>&#128176; "+Math.round(dn)+" ج.م</div></div><div class='day-card-body'>"+sh+"</div></div>";
                     });
-                    var ns=_repEmp.salary-tla+toa;
-                    h+='<div class="rep-summary"><div class="rep-sum-title">&#128202; إجمالي '+(_repRange?"الفترة المحددة":"شهر "+_mNames[mn])+'</div>';
-                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">أيام الحضور</span><span class="rep-sum-val">'+tp+' يوم</span></div>';
-                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">أيام الغياب</span><span class="rep-sum-val" style="color:var(--r);">'+ta+' يوم</span></div>';
-                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">إجمالي الخصومات</span><span class="rep-sum-val" style="color:var(--r);">- '+Math.round(tla)+' ج.م</span></div>';
-                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">إجمالي الأوفر تايم</span><span class="rep-sum-val" style="color:var(--gd);">+ '+Math.round(toa)+' ج.م</span></div>';
-                    h+='<div class="rep-sum-row"><span class="rep-sum-lbl">الراتب الأساسي</span><span class="rep-sum-val">'+Number(_repEmp.salary).toLocaleString()+' ج.م</span></div>';
-                    h+='<div class="rep-net-box"><div class="rep-net-lbl">صافي الراتب</div><div class="rep-net-val">'+Math.round(ns).toLocaleString()+' ج.م</div></div></div>';
+
+                    // إضافة كروت الإذن والسلفة
+                    if (leaveCards) h += leaveCards;
+                    if (loanCards) h += loanCards;
+
+                    // صافي الراتب الكامل
+                    var ns = _repEmp.salary - tla + toa - totalLoans - totalLeaveDeduct;
+                    h+="<div class='rep-summary'><div class='rep-sum-title'>&#128202; إجمالي "+(_repRange?"الفترة المحددة":"شهر "+_mNames[mn])+"</div>";
+                    h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الحضور</span><span class='rep-sum-val'>"+tp+" يوم</span></div>";
+                    h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الغياب</span><span class='rep-sum-val' style='color:var(--r);'>"+ta+" يوم</span></div>";
+                    h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>إجمالي الخصومات</span><span class='rep-sum-val' style='color:var(--r);'>- "+Math.round(tla)+" ج.م</span></div>";
+                    h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>إجمالي الأوفر تايم</span><span class='rep-sum-val' style='color:var(--gd);'>+ "+Math.round(toa)+" ج.م</span></div>";
+                    if (totalLoans > 0) h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>السلف المعتمدة</span><span class='rep-sum-val' style='color:#7b1fa2;'>- "+Math.round(totalLoans)+" ج.م</span></div>";
+                    if (totalLeaveDeduct > 0) h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>خصم الإذن</span><span class='rep-sum-val' style='color:var(--r);'>- "+Math.round(totalLeaveDeduct)+" ج.م</span></div>";
+                    h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>الراتب الأساسي</span><span class='rep-sum-val'>"+Number(_repEmp.salary).toLocaleString()+" ج.م</span></div>";
+                    h+="<div class='rep-net-box'><div class='rep-net-lbl'>صافي الراتب</div><div class='rep-net-val'>"+Math.round(ns).toLocaleString()+" ج.م</div></div></div>";
                     document.getElementById("repContent").innerHTML = h;
                     document.getElementById("repPrintBtns").style.display = "grid";
-                }).catch(function(){document.getElementById("repContent").innerHTML='<div class="empty">تعذر تحميل البيانات</div>';});
+                }).catch(function(){document.getElementById("repContent").innerHTML="<div class='empty'>تعذر تحميل البيانات</div>";});
             }
 
-            function printRep() {
+                        function printRep() {
                 addPrintHeader();
                 window.print();
                 removePrintHeader();
