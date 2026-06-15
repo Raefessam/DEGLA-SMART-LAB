@@ -1510,10 +1510,14 @@
                 if (!list || !list.length) { document.getElementById("reqList").innerHTML = '<div class="empty">لا توجد طلبات</div>'; return; }
                 var html = "";
                 list.forEach(function(r, ri) {
-                    var isSal = r.type === "salary";
+                    var isSal = r.type === "salary" || r.type === "سلفة";
                     var badge = isSal ? '<span class="rbg-s">سلفة</span>' : '<span class="rbg-l">إذن</span>';
                     var detail = isSal ? 'المبلغ: <b>' + (r.amount||"-") + '</b> ج.م' + (r.reason ? " · " + r.reason : "") : 'المدة: <b>' + (r.leaveDuration||"-") + '</b>' + (r.leaveReason ? " · " + r.leaveReason : "");
-                    var status = (r.status || "").toString().trim() === "" ? "pending" : r.status;
+                    var rawStatus = (r.status || "").toString().trim();
+                    var status = (rawStatus === "" || rawStatus === "pending" || rawStatus === "قيد المراجعة") ? "pending"
+                        : (rawStatus === "approved" || rawStatus === "معتمد") ? "approved"
+                        : (rawStatus === "rejected" || rawStatus === "مرفوض") ? "rejected"
+                        : "pending";
                     var statusBadge = status === "approved"
                         ? '<span style="background:var(--gl);color:var(--gd);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;">(ok) معتمد</span>'
                         : status === "rejected"
