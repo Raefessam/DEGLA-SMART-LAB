@@ -1498,7 +1498,7 @@
                 fetch(URL + "?action=getRequests").then(function(r) { return r.json(); }).then(function(data) {
                     allReqs = (data.requests || []).reverse();
                     renderReqs(allReqs);
-                }).catch(function() { document.getElementById("reqList").innerHTML = '<div class="empty">تعذر التحميل</div>'; });
+                }).catch(function(err) { document.getElementById("reqList").innerHTML = '<div class="empty">خطأ: ' + (err ? err.toString() : "unknown") + '</div>'; });
             }
             function filterReq(type) {
                 document.querySelectorAll("[id^='rt-']").forEach(function(b) { b.style.background=""; b.style.color=""; });
