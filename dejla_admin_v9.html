@@ -1509,20 +1509,77 @@
             function renderReqs(list) {
                 if (!list || !list.length) { document.getElementById("reqList").innerHTML = '<div class="empty">لا توجد طلبات</div>'; return; }
                 var html = "";
-                list.forEach(function(r) {
+                list.forEach(function(r, idx) {
                     var isSal = r.type === "salary";
-                    var badge = isSal ? '<span class="rbg-s"> سلفة</span>' : '<span class="rbg-l"> إذن</span>';
-                    var detail = isSal ? '<b>' + (r.amount||"-") + '</b> ج.م' + (r.reason ? " · " + r.reason : "") : 'المدة: <b>' + (r.leaveDuration||"-") + '</b>' + (r.leaveReason ? " · " + r.leaveReason : "");
-                    html += '<div class="li" style="flex-direction:column;align-items:flex-start;gap:4px;">';
-                    html += '<div style="display:flex;align-items:center;justify-content:space-between;width:100%;"><span style="font-weight:700;font-size:.86rem;">' + r.employeeName + '</span>' + badge + '</div>';
-                    html += '<div style="font-size:.7rem;color:var(--m);">' + r.branch + ' · الكود: ' + (r.employeeCode||"-") + '</div>';
-                    html += '<div style="font-size:.78rem;color:var(--t);">' + detail + '</div>';
-                    html += '<div style="font-size:.66rem;color:var(--b4);">' + (r.timestamp||"") + '</div></div>';
+                    var badge = isSal ? '<span class="rbg-s">سلفة</span>' : '<span class="rbg-l">إذن</span>';
+                    var detail = isSal ? 'المبلغ: <b>' + (r.amount||"-") + '</b> ج.م' + (r.reason ? " · " + r.reason : "") : 'المدة: <b>' + (r.leaveDuration||"-") + '</b>' + (r.leaveReason ? " · " + r.leaveReason : "");
+                    var status = r.status || "pending";
+                    var statusBadge = status === "approved"
+                        ? '<span style="background:var(--gl);color:var(--gd);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;">(ok) معتمد</span>'
+                        : status === "rejected"
+                        ? '<span style="background:var(--rl);color:var(--r);border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;">(x) مرفوض</span>'
+                        : '<span style="background:#fff8e1;color:#e65100;border-radius:20px;padding:2px 8px;font-size:.65rem;font-weight:700;">معلق</span>';
+                    var actionBtns = status === "pending"
+                        ? '<div style="display:flex;gap:8px;margin-top:8px;"><button onclick="approveReq(' + idx + ')" style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--gl);color:var(--gd);font-family:Cairo,sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;">موافقة</button><button onclick="rejectReq(' + idx + ')" style="flex:1;padding:8px;border:none;border-radius:10px;background:var(--rl);color:var(--r);font-family:Cairo,sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;">رفض</button></div>'
+                        : "";
+                    html += '<div class="card" style="padding:12px;margin-bottom:8px;">';
+                    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-weight:900;font-size:.88rem;">' + r.employeeName + '</span><div style="display:flex;gap:6px;">' + badge + statusBadge + '</div></div>';
+                    html += '<div style="font-size:.7rem;color:var(--m);margin-bottom:4px;">' + (r.branch||"") + ' - الكود: ' + (r.employeeCode||"-") + '</div>';
+                    html += '<div style="font-size:.8rem;color:var(--t);margin-bottom:4px;">' + detail + '</div>';
+                    html += '<div style="font-size:.65rem;color:var(--b4);">' + (r.timestamp||"") + '</div>' + actionBtns + '</div>';
                 });
                 document.getElementById("reqList").innerHTML = html;
             }
 
-            // ABSENCE
+            function approveReq(idx) {
+                var r = allReqs[idx];
+                if (!r) return;
+                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({action:"approveRequest",rowIndex:r.rowIndex,type:r.type,
+                    employeeCode:r.employeeCode,employeeName:r.employeeName,
+                    employeePhone:r.employeePhone||"",amount:r.amount||0,
+                    leaveDuration:r.leaveDuration||"",leaveReason:r.leaveReason||"",branch:r.branch||""})
+                }).then(function() {
+                    allReqs[idx].status = "approved";
+                    renderReqs(allReqs);
+                    toast("", "تمت الموافقة!", r.employeeName);
+                    if (r.employeePhone) {
+                        var ph = r.employeePhone.toString().replace(/[^0-9]/g,"");
+                        if (ph.startsWith("0")) ph = "2" + ph;
+                        var nl = "\n";
+                        var msg = r.type === "salary"
+                            ? "Degla Smart Lab" + nl + nl + "تم الموافقة على طلب السلفة بمبلغ " + r.amount + " ج.م" + nl + "سيتم خصمها من راتب الشهر القادم." + nl + nl + "Degla Smart Lab - HR Team"
+                            : (r.leaveDuration||"").indexOf("يوم") >= 0
+                                ? "Degla Smart Lab" + nl + nl + "تم الموافقة على طلب الاذن ليوم كامل" + nl + "سيتم خصم نص يوم من راتبك." + nl + nl + "Degla Smart Lab - HR Team"
+                                : "Degla Smart Lab" + nl + nl + "تم الموافقة على طلب الاذن بمدة " + (r.leaveDuration||"") + nl + nl + "Degla Smart Lab - HR Team";
+                        setTimeout(function() { location.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent(msg); }, 1500);
+                    }
+                }).catch(function() { toast("!", "حدث خطأ", ""); });
+            }
+
+            function rejectReq(idx) {
+                var r = allReqs[idx];
+                if (!r) return;
+                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({action:"rejectRequest",rowIndex:r.rowIndex,
+                    employeePhone:r.employeePhone||"",employeeName:r.employeeName,type:r.type})
+                }).then(function() {
+                    allReqs[idx].status = "rejected";
+                    renderReqs(allReqs);
+                    toast("!", "تم الرفض", r.employeeName);
+                    if (r.employeePhone) {
+                        var ph = r.employeePhone.toString().replace(/[^0-9]/g,"");
+                        if (ph.startsWith("0")) ph = "2" + ph;
+                        var nl = "\n";
+                        var msg = r.type === "salary"
+                            ? "Degla Smart Lab" + nl + nl + "نعتذر، تم رفض طلب السلفة." + nl + nl + "Degla Smart Lab - HR Team"
+                            : "Degla Smart Lab" + nl + nl + "نعتذر، تم رفض طلب الاذن." + nl + nl + "Degla Smart Lab - HR Team";
+                        setTimeout(function() { location.href = "https://wa.me/" + ph + "?text=" + encodeURIComponent(msg); }, 1500);
+                    }
+                }).catch(function() { toast("!", "حدث خطأ", ""); });
+            }
+
+                        // ABSENCE
             function saveAbs() {
                 var name = document.getElementById("an").value.trim();
                 var date = document.getElementById("ad").value;
