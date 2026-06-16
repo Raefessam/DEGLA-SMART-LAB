@@ -929,17 +929,13 @@
             }
 
 
-            /* Fix monthly display */
-            #s5 {
-                display: flex;
-                flex-direction: column;
-            }
-            #repIndividual, #repMonthly {
-                flex: 1;
-                overflow-y: auto;
-            }
+            /* Monthly display fix */
             #repMonthly {
                 padding-bottom: 20px;
+                overflow-y: visible;
+            }
+            #repIndividual {
+                overflow-y: visible;
             }
 
         </style>
