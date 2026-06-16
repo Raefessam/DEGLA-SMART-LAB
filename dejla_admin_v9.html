@@ -1172,6 +1172,18 @@
                             <button class="rep-print-btn" style="background:linear-gradient(135deg,#25D366,#128C7E);color:white;grid-column:span 2;" onclick="sendRepWhatsApp()">&#128242; ارسال واتساب</button>
                         </div>
                     </div>
+                    </div><!-- end repIndividual -->
+
+                    <!-- محتوى التقرير الشهري -->
+                    <div id="repMonthly" style="display:none;">
+                        <div class="monthly-filter">
+                            <label>اختار الشهر</label>
+                            <input type="month" id="monthlyMonth"/>
+                            <button class="monthly-run-btn" onclick="loadMonthlyReport()">&#128202; عرض التقرير الشهري الكامل</button>
+                        </div>
+                        <div id="monthlyContent"></div>
+                    </div>
+
                 </div>
             </div>
             <!-- NAV — fixed bottom مع safe area -->
@@ -1200,19 +1212,7 @@
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
                     <span>الطلبات</span>
 
-                    </div><!-- end repIndividual -->
 
-                    <!-- محتوى التقرير الشهري -->
-                    <div id="repMonthly" style="display:none;">
-                        <!-- فلتر -->
-                        <div class="monthly-filter">
-                            <label>اختار الشهر</label>
-                            <input type="month" id="monthlyMonth"/>
-                            <button class="monthly-run-btn" onclick="loadMonthlyReport()">&#128202; عرض التقرير الشهري الكامل</button>
-                        </div>
-                        <!-- المحتوى -->
-                        <div id="monthlyContent"></div>
-                    </div>
                 </div>
                 
             </nav>
