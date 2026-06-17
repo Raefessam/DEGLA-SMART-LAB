@@ -958,6 +958,7 @@
                 <div class="fg"><label>رقم البطاقة</label><input type="text" id="efi" maxlength="14" inputmode="numeric" placeholder="14 رقم"/></div>
                 <div class="fg"><label>الراتب (ج.م)</label><input type="number" id="efsal" inputmode="numeric" placeholder="الراتب الأساسي"/></div>
                 <div class="fg"><label>موبايل</label><input type="text" id="efph" inputmode="numeric" placeholder="01xxxxxxxxx"/></div>
+                <div class="fg"><label>تاريخ التعيين</label><input type="date" id="efhire" /></div>
                 <div class="fg">
                     <label>الحالة</label>
                     <select id="efst">
@@ -1077,6 +1078,7 @@
                         <div class="fg"><label>رقم البطاقة</label><input type="text" id="fi" placeholder="14 رقم" maxlength="14" inputmode="numeric"/></div>
                         <div class="fg"><label>الراتب (ج.م)</label><input type="number" id="fsal" placeholder="5000" inputmode="numeric"/></div>
                         <div class="fg"><label>موبايل</label><input type="text" id="fph" placeholder="01xxxxxxxxx" inputmode="numeric"/></div>
+                        <div class="fg"><label>تاريخ التعيين</label><input type="date" id="fhire" /></div>
                         <div class="fg"><label>الحالة</label><select id="fst"><option value="نشط">نشط</option><option value="غير نشط">غير نشط</option></select></div>
                         <button class="btn bng" id="sb" onclick="saveEmp()">حفظ الموظف</button>
                         <button class="btn bno" onclick="clrF()" style="margin-top:8px;">مسح</button>
@@ -1442,6 +1444,7 @@
                 document.getElementById("efsal").value = e.salary || "";
                 document.getElementById("efph").value = e.phone || "";
                 document.getElementById("efst").value = e.status || "نشط";
+                document.getElementById("efhire").value = e.hireDate || "";
                 document.getElementById("editModal").classList.add("show");
             }
             function closeEdit() { document.getElementById("editModal").classList.remove("show"); }
@@ -1768,7 +1771,7 @@
                 if (!nid || nid.length !== 14) { toast("(!)","رقم البطاقة 14 رقم",""); return; }
                 var btn = document.getElementById("sb");
                 btn.disabled=true; btn.innerHTML = 'جاري الحفظ <span class="sp"></span>';
-                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,salary:document.getElementById("fsal").value,phone:document.getElementById("fph").value,status:document.getElementById("fst").value})})
+                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addEmployee",name:name,nationalId:nid,salary:document.getElementById("fsal").value,phone:document.getElementById("fph").value,status:document.getElementById("fst").value,hireDate:document.getElementById("fhire").value||""})})
                 .then(function() {
                     btn.disabled=false; btn.textContent="حفظ الموظف";
                     welcomeData = {
@@ -1823,7 +1826,7 @@
             }
 
             function clrF() {
-                ["fn","fi","fsal","fph"].forEach(function(id) { document.getElementById(id).value = ""; });
+                ["fn","fi","fsal","fph","fhire"].forEach(function(id) { document.getElementById(id).value = ""; });
                 document.getElementById("fst").value = "نشط";
             }
 
@@ -2021,7 +2024,7 @@
                         h += '<div class="rep-ec-card"><div class="rep-ec-head">';
                         h += '<div class="rep-ec-av">' + av + '</div>';
                         h += '<div class="rep-ec-info"><div class="rep-ec-name">' + e.name + '</div><div class="rep-ec-meta">' + e.code + (sal?" • "+sal:"") + '</div></div>';
-                        h += '<button class="rep-ec-btn" data-code="' + e.code + '" data-name="' + e.name.replace(/"/g,"") + '" data-salary="' + (e.salary||0) + '" data-phone="' + (e.phone||"") + '" onclick="openRepDetail(this)">&#128202; التقرير</button>';
+                        h += '<button class="rep-ec-btn" data-code="' + e.code + '" data-name="' + e.name.replace(/"/g,"") + '" data-salary="' + (e.salary||0) + '" data-phone="' + (e.phone||"") + '" data-hire="' + (e.hireDate||"") + '" onclick="openRepDetail(this)">&#128202; التقرير</button>';
                         h += '</div></div>';
                     });
                     document.getElementById("repList").innerHTML = h;
@@ -2029,7 +2032,7 @@
             }
 
             function openRepDetail(btn) {
-                _repEmp = {code:btn.dataset.code, name:btn.dataset.name, salary:parseFloat(btn.dataset.salary)||0, phone:btn.dataset.phone||""};
+                _repEmp = {code:btn.dataset.code, name:btn.dataset.name, salary:parseFloat(btn.dataset.salary)||0, phone:btn.dataset.phone||"", hireDate:btn.dataset.hire||""};
                 document.getElementById("repEmpAv").textContent = _repEmp.name.charAt(0)||"م";
                 document.getElementById("repEmpName").textContent = _repEmp.name;
                 document.getElementById("repEmpMeta").textContent = "الراتب الأساسي: " + Number(_repEmp.salary).toLocaleString() + " ج.م";
@@ -2178,13 +2181,15 @@
                     var dm = {};
                     recs.forEach(function(r){if(!dm[r.date])dm[r.date]=[];dm[r.date].push(r);});
 
-                    // قائمة الأيام
+                    // قائمة الأيام — بيبدأ من تاريخ التعيين لو في نفس الشهر
+                    var hireDate = _repEmp.hireDate || "";
                     var days = [];
                     for (var d3=1;d3<=dim;d3++){
                         var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d3).padStart(2,"0");
                         if(_repRange&&fr&&dt<fr)continue;
                         if(_repRange&&to&&dt>to)continue;
                         if(new Date(yr,mn,d3).getDay()===5)continue;
+                        if(hireDate && dt < hireDate) continue;
                         days.push(dt);
                     }
 
@@ -2213,10 +2218,15 @@
                             var la=0,oa=0,ll="",ol="";
                             if(tm&&tm.indexOf("تأخير")>=0){
                                 var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
-                                if(ms>=30){la=spd;ll="خصم يوم كامل";}
-                                else if(ms>=15){la=spd/2;ll="خصم نص يوم";}
-                                else if(ms>=10){la=sph;ll="خصم ساعة";}
-                                else if(ms>=5){la=spm*10;ll="خصم 10 دقائق";}
+                                var isShift1 = (sf==="شيفت 1"||sf==="شيفت1");
+                                if(isShift1 && ms>=1){
+                                    la=spd*3;ll="خصم 3 أيام (تأخير شيفت 1)";
+                                } else if(!isShift1){
+                                    if(ms>=30){la=spd;ll="خصم يوم كامل";}
+                                    else if(ms>=15){la=spd/2;ll="خصم نص يوم";}
+                                    else if(ms>=10){la=sph;ll="خصم ساعة";}
+                                    else if(ms>=5){la=spm*10;ll="خصم 10 دقائق";}
+                                }
                             }
                             if(tm&&tm.indexOf("أوفر")>=0){
                                 var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
