@@ -742,6 +742,7 @@
             .day-card-head{padding:10px 14px;background:var(--gp);border-bottom:1.5px solid var(--b3);display:flex;align-items:center;justify-content:space-between;}
             .day-card-date{font-weight:900;font-size:.88rem;color:var(--gd);}
             .day-card-net{font-weight:900;font-size:.82rem;color:var(--gd);background:var(--gl);padding:3px 10px;border-radius:20px;}
+            .day-card-hours{font-weight:700;font-size:.72rem;color:var(--m);background:var(--b2);padding:3px 9px;border-radius:20px;}
             .day-card-absent{font-weight:900;font-size:.82rem;color:var(--r);background:var(--rl);padding:3px 10px;border-radius:20px;}
             .day-card-body{padding:10px 14px;}
             .shift-row{padding:8px 0;border-bottom:1px solid var(--b3);}
@@ -2190,8 +2191,11 @@
                     var dm = {};
                     recs.forEach(function(r){if(!dm[r.date])dm[r.date]=[];dm[r.date].push(r);});
 
-                    // قائمة الأيام — بيبدأ من تاريخ التعيين لو في نفس الشهر
+                    // قائمة الأيام — بيبدأ من تاريخ التعيين لو في نفس الشهر، وبيوقف عند النهاردة لو الشهر الحالي
                     var hireDate = _repEmp.hireDate || "";
+                    var todayStr = new Date().toISOString().slice(0,10);
+                    var todayYr = parseInt(todayStr.slice(0,4)), todayMn = parseInt(todayStr.slice(5,7))-1;
+                    var isCurrentMonth = (yr===todayYr && mn===todayMn);
                     var days = [];
                     for (var d3=1;d3<=dim;d3++){
                         var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d3).padStart(2,"0");
@@ -2199,6 +2203,7 @@
                         if(_repRange&&to&&dt>to)continue;
                         if(new Date(yr,mn,d3).getDay()===5)continue;
                         if(hireDate && dt < hireDate) continue;
+                        if(isCurrentMonth && dt > todayStr) continue;
                         days.push(dt);
                     }
 
@@ -2216,7 +2221,7 @@
                         tp++;
                         var ins=dr.filter(function(r){return r.action==="حضور";});
                         var outs=dr.filter(function(r){return r.action==="انصراف";});
-                        var dl=0,doa=0,sh="";
+                        var dl=0,doa=0,sh="",totalMins=0;
                         ins.forEach(function(inn,i){
                             var out=outs[i]||null;
                             var br=inn.branch||"";
@@ -2241,6 +2246,11 @@
                                 var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
                                 oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
                             }
+                            if(it!=="--"&&ot!=="--"){
+                                var inMins=parseInt(it.split(":")[0])*60+parseInt(it.split(":")[1]);
+                                var outMins=parseInt(ot.split(":")[0])*60+parseInt(ot.split(":")[1]);
+                                if(outMins>inMins)totalMins+=(outMins-inMins);
+                            }
                             dl+=la;doa+=oa;tla+=la;toa+=oa;
                             sh+="<div class='shift-row'><div style='font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;'>";
                             sh+="<span class='shift-branch-badge'>&#127970; "+(br||"—")+"</span>";
@@ -2253,7 +2263,12 @@
                             sh+="</div>";
                         });
                         var dn=spd-dl+doa;
-                        h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div class='day-card-net'>&#128176; "+Math.round(dn)+" ج.م</div></div><div class='day-card-body'>"+sh+"</div></div>";
+                        var hrsLbl="";
+                        if(totalMins>0){
+                            var hh=Math.floor(totalMins/60), mm=totalMins%60;
+                            hrsLbl="<div class='day-card-hours'>&#9201; "+hh+" س"+(mm>0?" "+mm+" د":"")+"</div>";
+                        }
+                        h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div style='display:flex;align-items:center;gap:8px;'>"+hrsLbl+"<div class='day-card-net'>&#128176; "+Math.round(dn)+" ج.م</div></div></div><div class='day-card-body'>"+sh+"</div></div>";
                     });
 
                     // إضافة كروت الإذن والسلفة
