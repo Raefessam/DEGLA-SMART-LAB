@@ -6,6 +6,15 @@
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <title>Degla Smart Lab - إدارة</title>
+        <link rel="manifest" href="manifest.json"/>
+        <meta name="theme-color" content="#4e9012"/>
+        <link rel="apple-touch-icon" href="icon-180.png"/>
+        <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png"/>
+        <link rel="icon" type="image/png" sizes="16x16" href="icon-16.png"/>
+        <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+        <meta name="apple-mobile-web-app-title" content="Degla Lab"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
         <style>
             :root {
@@ -1453,7 +1462,7 @@
                 if (!name) { toast("(!)","أدخل الاسم",""); return; }
                 var btn = document.getElementById("editSaveBtn");
                 btn.disabled = true; btn.innerHTML = 'جاري الحفظ <span class="sp"></span>';
-                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"editEmployee",code:document.getElementById("editCode").value,name:name,nationalId:document.getElementById("efi").value,salary:document.getElementById("efsal").value,phone:document.getElementById("efph").value,status:document.getElementById("efst").value})})
+                fetch(URL, {method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"editEmployee",code:document.getElementById("editCode").value,name:name,nationalId:document.getElementById("efi").value,salary:document.getElementById("efsal").value,phone:document.getElementById("efph").value,status:document.getElementById("efst").value,hireDate:document.getElementById("efhire").value||""})})
                 .then(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; closeEdit(); toast("","تم تحديث بيانات الموظف بنجاح!",""); setTimeout(function() { loadE(); }, 1500); })
                 .catch(function() { btn.disabled=false; btn.textContent="حفظ التعديلات"; toast("","حدث خطأ",""); });
             }
