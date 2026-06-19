@@ -334,25 +334,26 @@ function sendSalary(){
     var amt=document.getElementById("salAmount").value;
     if(!amt){toast("⚠️ أدخل المبلغ");return;}
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value})})
-    .then(function(){toast("✅ تم إرسال طلب السلفة!");document.getElementById("salAmount").value="";document.getElementById("salReason").value="";})
+    .then(function(){playSound("req");toast("✅ تم إرسال طلب السلفة!");document.getElementById("salAmount").value="";document.getElementById("salReason").value="";})
     .catch(function(){toast("❌ تعذر الإرسال");});
 }
 function sendLeave(){
     var reason=document.getElementById("leaveReason").value.trim();
     if(!reason){toast("⚠️ أدخل سبب الإذن");return;}
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"leave",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,leaveReason:reason,leaveDuration:document.getElementById("leaveDur").value,leaveNote:document.getElementById("leaveNote").value})})
-    .then(function(){toast("✅ تم إرسال طلب الإذن!");document.getElementById("leaveReason").value="";document.getElementById("leaveNote").value="";})
+    .then(function(){playSound("req");toast("✅ تم إرسال طلب الإذن!");document.getElementById("leaveReason").value="";document.getElementById("leaveNote").value="";})
     .catch(function(){toast("❌ تعذر الإرسال");});
 }
 
 function playSound(type){
-    try{if(navigator.vibrate)navigator.vibrate(type==="in"?[80,40,80]:[120]);}catch(e){}
+    try{if(navigator.vibrate)navigator.vibrate(type==="in"?[80,40,80]:type==="req"?[60,30,60,30,60]:[120]);}catch(e){}
     try{
         var c=new(window.AudioContext||window.webkitAudioContext)();
         if(c.state==="suspended")c.resume();
         var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
         o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
         if(type==="in"){o.frequency.setValueAtTime(392,c.currentTime);o.frequency.linearRampToValueAtTime(523,c.currentTime+.15);o.frequency.linearRampToValueAtTime(659,c.currentTime+.3);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.25,c.currentTime+.05);g.gain.setValueAtTime(0.25,c.currentTime+.25);g.gain.linearRampToValueAtTime(0,c.currentTime+.5);o.start(c.currentTime);o.stop(c.currentTime+.5);}
+        else if(type==="req"){o.frequency.setValueAtTime(660,c.currentTime);o.frequency.linearRampToValueAtTime(880,c.currentTime+.12);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.04);g.gain.setValueAtTime(0.2,c.currentTime+.18);g.gain.linearRampToValueAtTime(0,c.currentTime+.35);o.start(c.currentTime);o.stop(c.currentTime+.35);}
         else{o.frequency.setValueAtTime(523,c.currentTime);o.frequency.linearRampToValueAtTime(392,c.currentTime+.2);o.frequency.linearRampToValueAtTime(330,c.currentTime+.4);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.05);g.gain.setValueAtTime(0.2,c.currentTime+.3);g.gain.linearRampToValueAtTime(0,c.currentTime+.55);o.start(c.currentTime);o.stop(c.currentTime+.55);}
     }catch(e){}
 }

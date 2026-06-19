@@ -1231,6 +1231,34 @@
             var pin = "", lastCount = 0, cachedEmps = [], allReqs = [], allAttRecs = [];
             var pendingDelCode = null, pendingDelType = null, salEmpCode = null;
 
+            function fmtWaPhone(raw) {
+                var ph = (raw||"").toString().replace(/[^0-9]/g, "");
+                if (!ph) return "";
+                if (ph.startsWith("20")) return ph;
+                if (ph.startsWith("0")) return "20" + ph.substring(1);
+                return "20" + ph;
+            }
+
+            function playNotifSound() {
+                try {
+                    var ctx = new (window.AudioContext||window.webkitAudioContext)();
+                    var o = ctx.createOscillator(), g = ctx.createGain();
+                    o.connect(g); g.connect(ctx.destination);
+                    o.type = "sine"; o.frequency.value = 880;
+                    g.gain.setValueAtTime(0.18, ctx.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.35);
+                    o.start(); o.stop(ctx.currentTime+0.35);
+                    setTimeout(function(){
+                        var o2 = ctx.createOscillator(), g2 = ctx.createGain();
+                        o2.connect(g2); g2.connect(ctx.destination);
+                        o2.type = "sine"; o2.frequency.value = 1100;
+                        g2.gain.setValueAtTime(0.16, ctx.currentTime);
+                        g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.3);
+                        o2.start(); o2.stop(ctx.currentTime+0.3);
+                    }, 140);
+                } catch(e) {}
+            }
+
             // SPLASH
             setTimeout(function() {
                 var s = document.getElementById("splash");
@@ -1302,9 +1330,15 @@
                         if (!r.name) return;
                         var act = r.action || "";
                         if (act !== "حضور" && act !== "انصراف") return;
-                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,inn:null,out:null,innT:"--",outT:"--"};
-                        if (act === "حضور" && !map[r.name].inn) { map[r.name].inn = r.time; map[r.name].innT = (r.time||"").slice(0,5); }
-                        if (act === "انصراف") { map[r.name].out = r.time; map[r.name].outT = (r.time||"").slice(0,5); }
+                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,inn:null,out:null,innT:"--",outT:"--",lateTxt:"",otTxt:""};
+                        if (act === "حضور" && !map[r.name].inn) {
+                            map[r.name].inn = r.time; map[r.name].innT = (r.time||"").slice(0,5);
+                            if (r.timing && r.timing.indexOf("تأخير")>=0) map[r.name].lateTxt = r.timing;
+                        }
+                        if (act === "انصراف") {
+                            map[r.name].out = r.time; map[r.name].outT = (r.time||"").slice(0,5);
+                            if (r.timing && r.timing.indexOf("أوفر")>=0) map[r.name].otTxt = r.timing;
+                        }
                     });
                     lastCount = recs.length;
                     var list = Object.values(map);
@@ -1325,8 +1359,15 @@
                         if (emps.length) {
                             html += '<div class="bcard-body">';
                             emps.forEach(function(e) {
-                                var outPart = e.out ? '<span class="bemp-out">' + e.outT + '</span>' : '<span class="bemp-still">داخل ♥</span>';
-                                html += '<div class="bemp"><span class="bemp-name">' + e.name + '</span><span class="bemp-in">⏰' + e.innT + '</span>' + outPart + '</div>';
+                                var outPart = e.out ? '<span class="bemp-out">' + e.outT + '</span>' : '<span class="bemp-still">داخل</span>';
+                                var alertPart = "";
+                                if (e.lateTxt) {
+                                    alertPart += '<div style="background:#ffebee;border:1.5px solid var(--r);border-radius:8px;padding:3px 8px;margin-top:4px;color:var(--r);font-weight:900;font-size:.72rem;">&#9888; ' + e.lateTxt + '</div>';
+                                }
+                                if (e.otTxt) {
+                                    alertPart += '<div style="background:#e8f5e9;border:1.5px solid var(--gd);border-radius:8px;padding:3px 8px;margin-top:4px;color:var(--gd);font-weight:900;font-size:.72rem;">&#11088; ' + e.otTxt + '</div>';
+                                }
+                                html += '<div class="bemp" style="flex-direction:column;align-items:stretch;' + (e.lateTxt ? 'background:#fff8f8;' : '') + '"><div style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span class="bemp-name"' + (e.lateTxt ? ' style="color:var(--r);font-weight:900;"' : '') + '>' + e.name + '</span><span class="bemp-in"' + (e.lateTxt ? ' style="color:var(--r);font-weight:900;"' : '') + '>&#9201;' + e.innT + '</span>' + outPart + '</div>' + alertPart + '</div>';
                             });
                             html += '</div>';
                         }
@@ -1339,6 +1380,7 @@
             }
 
             // AUTO CHECK
+            var lastReqCount = 0;
             function startAutoCheck() {
                 setInterval(function() {
                     fetch(URL + "?action=getAttendance").then(function(r) { return r.json(); }).then(function(data) {
@@ -1347,9 +1389,19 @@
                         if (recs.length > lastCount && lastCount > 0) {
                             var last = recs[recs.length - 1];
                             toast(last.action === "حضور" ? "" : "", last.name + " • " + last.action, last.branch + " | " + last.time.slice(0,5));
+                            playNotifSound();
                             loadH();
                         }
                         lastCount = recs.length;
+                    }).catch(function() {});
+                    fetch(URL + "?action=getRequests").then(function(r) { return r.json(); }).then(function(data) {
+                        var reqs = data.requests || [];
+                        if (reqs.length > lastReqCount && lastReqCount > 0) {
+                            var last = reqs[reqs.length - 1];
+                            toast("", "طلب جديد • " + last.employeeName, (last.type === "leave" ? "إذن" : "سلفة"));
+                            playNotifSound();
+                        }
+                        lastReqCount = reqs.length;
                     }).catch(function() {});
                 }, 10000);
             }
@@ -1575,8 +1627,11 @@
                     var parts = month.split("-");
                     var yr = parseInt(parts[0]), mn = parseInt(parts[1])-1;
                     var dim = new Date(yr,mn+1,0).getDate();
+                    var todayStr3 = new Date().toISOString().slice(0,10);
+                    var isCurMonth3 = (yr===parseInt(todayStr3.slice(0,4)) && mn===parseInt(todayStr3.slice(5,7))-1);
+                    var endDay3 = isCurMonth3 ? parseInt(todayStr3.split("-")[2]) : dim;
                     var wd = 0;
-                    for (var d=1;d<=dim;d++){if(new Date(yr,mn,d).getDay()!==5)wd++;}
+                    for (var d=1;d<=endDay3;d++){if(new Date(yr,mn,d).getDay()!==5)wd++;}
                     var mNames2 = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
                     // حساب كل موظف
@@ -1599,20 +1654,26 @@
                         recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
 
                         var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0;
-                        for (var d2=1;d2<=dim;d2++){
+                        for (var d2=1;d2<=endDay3;d2++){
                             var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
                             if(new Date(yr,mn,d2).getDay()===5) continue;
                             var dr2 = dm2[dt] || [];
-                            if (!dr2.length) { absentDays++; lateDeduct += spd; continue; }
+                            if (!dr2.length) { absentDays++; continue; }
                             presentDays++;
                             dr2.forEach(function(r){
                                 var tm = r.timing || "";
+                                var sf2 = r.shift || "";
+                                var isShift1b = (sf2==="شيفت 1"||sf2==="شيفت1");
                                 if(tm.indexOf("تأخير")>=0){
                                     var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
-                                    if(ms>=30) lateDeduct+=spd;
-                                    else if(ms>=15) lateDeduct+=spd/2;
-                                    else if(ms>=10) lateDeduct+=sph;
-                                    else if(ms>=5) lateDeduct+=sph/60*10;
+                                    if(isShift1b && ms>=1){
+                                        lateDeduct+=spd*3;
+                                    } else if(!isShift1b){
+                                        if(ms>=30) lateDeduct+=spd;
+                                        else if(ms>=15) lateDeduct+=spd/2;
+                                        else if(ms>=10) lateDeduct+=sph;
+                                        else if(ms>=5) lateDeduct+=sph/60*10;
+                                    }
                                 }
                                 if(tm.indexOf("أوفر")>=0){
                                     var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
@@ -1644,7 +1705,7 @@
                             }
                         });
 
-                        var netSalary = salary - lateDeduct + otAmount - loans - leaveDeduct;
+                        var netSalary = (spd*presentDays) - lateDeduct + otAmount - loans - leaveDeduct;
 
                         // إحصائيات
                         totalBasic += salary;
@@ -1751,8 +1812,7 @@
                     var emp = allEmps ? allEmps.find(function(x){ return x.code === e.code; }) : null;
                     var ph = emp ? emp.phone : "";
                     if (!ph) { sendNext(); return; }
-                    ph = ph.toString().replace(/[^0-9]/g,"");
-                    if (ph.startsWith("0")) ph = "2" + ph;
+                    ph = fmtWaPhone(ph);
                     var nl = "\n";
                     var msg = "Degla Smart Lab" + nl + nl;
                     msg += "راتب شهر " + monthLabel + nl;
@@ -1799,8 +1859,7 @@
             
             function sendWelcomeWhatsApp(name, code, nid, phone) {
                 if (!phone) { toast("(!)","مفيش رقم موبايل للموظف",""); return; }
-                var ph = phone.toString().replace(/[^0-9]/g,"");
-                if (ph.startsWith("0")) ph = "2" + ph;
+                var ph = fmtWaPhone(phone);
                 var msg = " *Degla Smart Lab*\n";
                 msg += "مرحباً بك في فريق العمل! \n\n";
                 msg += "نسعد بانضمامك لعائلة Degla Smart Lab ونتمنى لك تجربة عمل مميزة ومثمرة معنا (*)\n\n";
@@ -1959,8 +2018,7 @@
                     renderReqs(allReqs);
                     toast("", "تمت الموافقة!", r.employeeName);
                     if (r.employeePhone) {
-                        var ph = r.employeePhone.toString().replace(/[^0-9]/g,"");
-                        if (ph.startsWith("0")) ph = "2" + ph;
+                        var ph = fmtWaPhone(r.employeePhone);
                         var nl = "\n";
                         var msg = r.type === "salary"
                             ? "Degla Smart Lab" + nl + nl + "تم الموافقة على طلب السلفة بمبلغ " + r.amount + " ج.م" + nl + "سيتم خصمها من راتب الشهر القادم." + nl + nl + "Degla Smart Lab - HR Team"
@@ -1983,8 +2041,7 @@
                     renderReqs(allReqs);
                     toast("!", "تم الرفض", r.employeeName);
                     if (r.employeePhone) {
-                        var ph = r.employeePhone.toString().replace(/[^0-9]/g,"");
-                        if (ph.startsWith("0")) ph = "2" + ph;
+                        var ph = fmtWaPhone(r.employeePhone);
                         var nl = "\n";
                         var msg = r.type === "salary"
                             ? "Degla Smart Lab" + nl + nl + "نعتذر، تم رفض طلب السلفة." + nl + nl + "Degla Smart Lab - HR Team"
@@ -2207,7 +2264,7 @@
                         days.push(dt);
                     }
 
-                    var tp=0,ta=0,tla=0,toa=0,h="";
+                    var tp=0,ta=0,tla=0,toa=0,tlaNoAbsence=0,h="";
                     days.forEach(function(dt){
                         var dr=dm[dt]||[];
                         var dobj=new Date(dt);
@@ -2251,7 +2308,7 @@
                                 var outMins=parseInt(ot.split(":")[0])*60+parseInt(ot.split(":")[1]);
                                 if(outMins>inMins)totalMins+=(outMins-inMins);
                             }
-                            dl+=la;doa+=oa;tla+=la;toa+=oa;
+                            dl+=la;doa+=oa;tla+=la;toa+=oa;tlaNoAbsence+=la;
                             sh+="<div class='shift-row'><div style='font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;'>";
                             sh+="<span class='shift-branch-badge'>&#127970; "+(br||"—")+"</span>";
                             if(sf)sh+="<span style='font-size:.65rem;color:var(--m);'>"+sf+"</span>";
@@ -2275,8 +2332,8 @@
                     if (leaveCards) h += leaveCards;
                     if (loanCards) h += loanCards;
 
-                    // صافي الراتب الكامل
-                    var ns = _repEmp.salary - tla + toa - totalLoans - totalLeaveDeduct;
+                    // صافي الراتب = (راتب اليوم × أيام الحضور الفعلية) + الأوفر تايم + بدل الجمعة - خصومات التأخير - السلف
+                    var ns = (spd*tp) - tlaNoAbsence + toa - totalLoans - totalLeaveDeduct;
                     h+="<div class='rep-summary'><div class='rep-sum-title'>&#128202; إجمالي "+(_repRange?"الفترة المحددة":"شهر "+_mNames[mn])+"</div>";
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الحضور</span><span class='rep-sum-val'>"+tp+" يوم</span></div>";
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الغياب</span><span class='rep-sum-val' style='color:var(--r);'>"+ta+" يوم</span></div>";
@@ -2337,8 +2394,7 @@
 
                         function sendRepWhatsApp() {
                 if (!_repEmp || !_repEmp.phone) { toast("!", "مفيش رقم للموظف", ""); return; }
-                var ph = _repEmp.phone.toString().replace(/[^0-9]/g, "");
-                if (ph.startsWith("0")) ph = "2" + ph;
+                var ph = fmtWaPhone(_repEmp.phone);
                 var month = document.getElementById("repMonth").value;
                 var mParts = month.split("-");
                 var mNames = ["يناير","فبراير","مارس","ابريل","مايو","يونيو","يوليو","اغسطس","سبتمبر","اكتوبر","نوفمبر","ديسمبر"];
