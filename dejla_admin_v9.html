@@ -1637,7 +1637,7 @@
                     var totalBasic = 0, totalDeduct = 0, totalOT = 0, totalLoans2 = 0, totalLeaveD = 0, totalNet = 0;
                     var maxPresent = {name:"", days:0}, maxAbsent = {name:"", days:0};
                     var alerts = [];
-                    var totalPresenceDays = 0;
+                    var totalPresenceDays = 0, totalWd = 0;
 
                     emps.forEach(function(emp) {
                         var salary = parseFloat(emp.salary) || 0;
@@ -1651,6 +1651,7 @@
                         }
                         var wd = 0;
                         for (var dw=startDay2; dw<=endDay3; dw++) { if(new Date(yr,mn,dw).getDay()!==5) wd++; }
+                        totalWd += wd;
                         var spd = salary / (wd||1);
                         var sph = spd / 8;
 
@@ -1743,7 +1744,7 @@
 
                     // إحصائيات سريعة
                     var avgPresence = emps.length ? Math.round(totalPresenceDays/emps.length) : 0;
-                    var presenceRate = wd ? Math.round(totalPresenceDays/(emps.length*(wd||1))*100) : 0;
+                    var presenceRate = totalWd ? Math.round(totalPresenceDays/totalWd*100) : 0;
                     h += "<div class='monthly-stats'>";
                     h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#128100;</div><div class='monthly-stat-val'>" + emps.length + "</div><div class='monthly-stat-lbl'>موظف نشط</div></div>";
                     h += "<div class='monthly-stat-card'><div class='monthly-stat-icon'>&#9989;</div><div class='monthly-stat-val'>" + presenceRate + "%</div><div class='monthly-stat-lbl'>نسبة الحضور</div></div>";
