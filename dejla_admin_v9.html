@@ -1630,8 +1630,6 @@
                     var todayStr3 = new Date().toISOString().slice(0,10);
                     var isCurMonth3 = (yr===parseInt(todayStr3.slice(0,4)) && mn===parseInt(todayStr3.slice(5,7))-1);
                     var endDay3 = isCurMonth3 ? parseInt(todayStr3.split("-")[2]) : dim;
-                    var wd = 0;
-                    for (var d=1;d<=endDay3;d++){if(new Date(yr,mn,d).getDay()!==5)wd++;}
                     var mNames2 = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
                     // حساب كل موظف
@@ -1643,6 +1641,16 @@
 
                     emps.forEach(function(emp) {
                         var salary = parseFloat(emp.salary) || 0;
+                        var hireDate2 = emp.hireDate || "";
+                        var hireMonth2 = hireDate2 ? hireDate2.substring(0,7) : "";
+                        var startDay2 = 1;
+                        if (hireMonth2 === month) {
+                            startDay2 = parseInt(hireDate2.split("-")[2]) || 1;
+                        } else if (hireMonth2 && hireMonth2 > month) {
+                            startDay2 = endDay3 + 1;
+                        }
+                        var wd = 0;
+                        for (var dw=startDay2; dw<=endDay3; dw++) { if(new Date(yr,mn,dw).getDay()!==5) wd++; }
                         var spd = salary / (wd||1);
                         var sph = spd / 8;
 
@@ -1654,7 +1662,7 @@
                         recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
 
                         var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0;
-                        for (var d2=1;d2<=endDay3;d2++){
+                        for (var d2=startDay2;d2<=endDay3;d2++){
                             var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
                             if(new Date(yr,mn,d2).getDay()===5) continue;
                             var dr2 = dm2[dt] || [];
