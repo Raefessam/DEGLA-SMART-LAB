@@ -2295,6 +2295,7 @@
                             var it=inn.time?inn.time.slice(0,5):"--";
                             var ot=out?out.time.slice(0,5):"--";
                             var tm=inn.timing||"";
+                            var otTm=out?(out.timing||""):"";
                             var la=0,oa=0,ll="",ol="";
                             if(tm&&tm.indexOf("تأخير")>=0){
                                 var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
@@ -2308,8 +2309,8 @@
                                     else if(ms>=5){la=spm*10;ll="خصم 10 دقائق";}
                                 }
                             }
-                            if(tm&&tm.indexOf("أوفر")>=0){
-                                var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                            if(otTm&&otTm.indexOf("أوفر")>=0){
+                                var om=parseInt(otTm.replace(/[^0-9]/g,""))||0;
                                 oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
                             }
                             if(it!=="--"&&ot!=="--"){
