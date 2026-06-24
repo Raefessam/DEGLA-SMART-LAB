@@ -1239,6 +1239,18 @@
                 return "20" + ph;
             }
 
+            // ساعات الشيفت الفعلية لكل فرع وشيفت
+            var SHIFT_HOURS = {
+                "فرع زهراء المعادي": { "شيفت 1": 6, "شيفت 2": 7 },
+                "فرع كوتسيكا":       { "شيفت 1": 7, "شيفت 2": 7 },
+                "فرع كورنيش طرة":     { "شيفت 1": 6, "شيفت 2": 6 }
+            };
+            function getShiftHours(branch, shift) {
+                var b = SHIFT_HOURS[branch];
+                if (b && b[shift]) return b[shift];
+                return 8; // افتراضي لو فرع/شيفت غير معروف
+            }
+
             function playNotifSound() {
                 try {
                     var ctx = new (window.AudioContext||window.webkitAudioContext)();
@@ -1653,7 +1665,6 @@
                         for (var dw=startDay2; dw<=endDay3; dw++) { if(new Date(yr,mn,dw).getDay()!==5) wd++; }
                         totalWd += wd;
                         var spd = salary / (wd||1);
-                        var sph = spd / 8;
 
                         // سجلات الحضور
                         var recs = allRecs.filter(function(r){
@@ -1672,7 +1683,9 @@
                             dr2.forEach(function(r){
                                 var tm = r.timing || "";
                                 var sf2 = r.shift || "";
+                                var br2 = r.branch || "";
                                 var isShift1b = (sf2==="شيفت 1"||sf2==="شيفت1");
+                                var sph2 = spd / getShiftHours(br2, sf2);
                                 if(tm.indexOf("تأخير")>=0){
                                     var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
                                     if(isShift1b && ms>=1){
@@ -1680,13 +1693,13 @@
                                     } else if(!isShift1b){
                                         if(ms>=30) lateDeduct+=spd;
                                         else if(ms>=15) lateDeduct+=spd/2;
-                                        else if(ms>=10) lateDeduct+=sph;
-                                        else if(ms>=5) lateDeduct+=sph/60*10;
+                                        else if(ms>=10) lateDeduct+=sph2;
+                                        else if(ms>=5) lateDeduct+=sph2/60*10;
                                     }
                                 }
                                 if(tm.indexOf("أوفر")>=0){
                                     var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
-                                    otAmount+=(om/60)*sph*1.5;
+                                    otAmount+=(om/60)*sph2*1.5;
                                 }
                             });
                         }
@@ -1710,7 +1723,7 @@
                                 if(dur.indexOf("ساعتين")>=0) hrs=2;
                                 else { var hm=dur.match(/(\d+)/); hrs=hm?parseInt(hm[1]):1; }
                                 leaveHrs+=hrs;
-                                if(leaveHrs>4){ leaveDeduct+=(leaveHrs-4)*sph; }
+                                if(leaveHrs>4){ leaveDeduct+=(leaveHrs-4)*(spd/getShiftHours(emp.branch,emp.shift)); }
                             }
                         });
 
@@ -2251,7 +2264,7 @@
                     var dim = new Date(yr,mn+1,0).getDate();
                     var wd = 0;
                     for (var d2=1;d2<=dim;d2++){if(new Date(yr,mn,d2).getDay()!==5)wd++;}
-                    var spd = _repEmp.salary/(wd||1), sph = spd/8, spm = sph/60;
+                    var spd = _repEmp.salary/(wd||1);
 
                     // بناء dayMap
                     var dm = {};
@@ -2296,6 +2309,8 @@
                             var ot=out?out.time.slice(0,5):"--";
                             var tm=inn.timing||"";
                             var otTm=out?(out.timing||""):"";
+                            var shHours=getShiftHours(br,sf);
+                            var sph=spd/shHours, spm=sph/60;
                             var la=0,oa=0,ll="",ol="";
                             if(tm&&tm.indexOf("تأخير")>=0){
                                 var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
