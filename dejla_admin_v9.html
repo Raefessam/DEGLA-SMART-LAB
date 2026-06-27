@@ -868,7 +868,14 @@
                 font-weight: 900; color: var(--gd);
             }
             .monthly-table .td-net.negative { color: var(--r); }
-            .monthly-table .td-deduct { color: var(--r); }
+            .monthly-table .td-deduct { color: var(--r); font-weight: 900; }
+            .monthly-branch-compare { margin-top: 16px; background: var(--c); border-radius: 14px; padding: 14px; }
+            .monthly-stat-card-title { font-size: .85rem; font-weight: 800; color: var(--d); margin-bottom: 10px; }
+            .monthly-branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+            .monthly-branch-card { background: var(--b2); border-radius: 12px; padding: 12px; text-align: center; }
+            .monthly-branch-name { font-size: .72rem; font-weight: 700; color: var(--d); margin-bottom: 6px; }
+            .monthly-branch-rate { font-size: 1.4rem; font-weight: 900; }
+            .monthly-branch-sub { font-size: .62rem; color: var(--m); margin-top: 4px; }
             .monthly-table .td-ot { color: var(--gd); }
             .monthly-table .td-loan { color: #7b1fa2; }
             /* إجمالي */
@@ -1249,6 +1256,11 @@
                 var b = SHIFT_HOURS[branch];
                 if (b && b[shift]) return b[shift];
                 return 8; // افتراضي لو فرع/شيفت غير معروف
+            }
+            function timeToMinsJS(t) {
+                if (!t) return 0;
+                var p = t.toString().trim().split(":");
+                return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0);
             }
 
             function playNotifSound() {
@@ -1673,13 +1685,20 @@
                         var dm2 = {};
                         recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
 
-                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0;
+                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0, lateCount = 0, empWorkMins = 0;
                         for (var d2=startDay2;d2<=endDay3;d2++){
                             var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
                             if(new Date(yr,mn,d2).getDay()===5) continue;
                             var dr2 = dm2[dt] || [];
                             if (!dr2.length) { absentDays++; continue; }
                             presentDays++;
+                            var insDay = dr2.filter(function(r){return r.action==="حضور";});
+                            var outsDay = dr2.filter(function(r){return r.action==="انصراف";});
+                            if (insDay.length && outsDay.length) {
+                                var firstInM = timeToMinsJS(insDay[0].time);
+                                var lastOutM = timeToMinsJS(outsDay[outsDay.length-1].time);
+                                if (lastOutM > firstInM) empWorkMins += (lastOutM - firstInM);
+                            }
                             dr2.forEach(function(r){
                                 var tm = r.timing || "";
                                 var sf2 = r.shift || "";
@@ -1688,6 +1707,7 @@
                                 var sph2 = spd / getShiftHours(br2, sf2);
                                 if(tm.indexOf("تأخير")>=0){
                                     var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                                    lateCount++;
                                     if(isShift1b && ms>=1){
                                         lateDeduct+=spd*3;
                                     } else if(!isShift1b){
@@ -1700,6 +1720,13 @@
                                 if(tm.indexOf("أوفر")>=0){
                                     var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
                                     otAmount+=(om/60)*sph2*1.5;
+                                }
+                                if(tm.indexOf("انصراف مبكر")>=0){
+                                    var hM=tm.match(/(\d+)\s*س/);
+                                    var mM=tm.match(/(\d+)\s*د/);
+                                    var eh2=hM?parseInt(hM[1]):0;
+                                    var em2=mM?parseInt(mM[1]):0;
+                                    lateDeduct+=((eh2*60+em2)/60)*sph2;
                                 }
                             });
                         }
@@ -1743,12 +1770,16 @@
                         if(absentDays >= 5){ alerts.push(emp.name + " — غياب " + absentDays + " يوم"); }
                         if(loans >= salary * 0.5){ alerts.push(emp.name + " — سلفة كبيرة (" + Math.round(loans) + " ج.م)"); }
 
+                        var presenceRateEmp = (presentDays+absentDays) ? Math.round(presentDays/(presentDays+absentDays)*100) : 0;
+                        var avgDailyHours = presentDays ? Math.round((empWorkMins/presentDays/60)*10)/10 : 0;
+
                         empResults.push({
                             name: emp.name, code: emp.code, branch: emp.branch,
                             salary: salary, present: presentDays, absent: absentDays,
                             deduct: Math.round(lateDeduct), ot: Math.round(otAmount),
                             loans: Math.round(loans), leaveD: Math.round(leaveDeduct),
-                            net: Math.round(netSalary)
+                            net: Math.round(netSalary),
+                            presenceRate: presenceRateEmp, avgHours: avgDailyHours, lateCount: lateCount
                         });
                     });
 
@@ -1775,13 +1806,17 @@
 
                     // جدول الموظفين
                     h += "<div class='monthly-table-wrap'><table class='monthly-table'>";
-                    h += "<thead><tr><th>الموظف</th><th>حضور</th><th>غياب</th><th>خصم</th><th>أوفر</th><th>سلف</th><th>إذن</th><th>الصافي</th></tr></thead><tbody>";
+                    h += "<thead><tr><th>الموظف</th><th>حضور</th><th>غياب</th><th>%حضور</th><th>متوسط س/يوم</th><th>مرات تأخير</th><th>خصم</th><th>أوفر</th><th>سلف</th><th>إذن</th><th>الصافي</th></tr></thead><tbody>";
                     empResults.forEach(function(e){
                         var netClass = e.net < 0 ? "td-net negative" : "td-net";
+                        var rateColor = e.presenceRate>=90 ? "var(--gd)" : (e.presenceRate>=70 ? "#f57f17" : "var(--r)");
                         h += "<tr>";
                         h += "<td class='td-name'>" + e.name + "<br><span style='font-size:.65rem;color:var(--m);'>" + e.branch + "</span></td>";
                         h += "<td>" + e.present + "</td>";
                         h += "<td style='color:var(--r);'>" + e.absent + "</td>";
+                        h += "<td style='color:" + rateColor + ";font-weight:800;'>" + e.presenceRate + "%</td>";
+                        h += "<td>" + e.avgHours + "</td>";
+                        h += "<td style='" + (e.lateCount>0?"color:var(--r);font-weight:800;":"") + "'>" + e.lateCount + "</td>";
                         h += "<td class='td-deduct'>" + (e.deduct?"-"+e.deduct:"—") + "</td>";
                         h += "<td class='td-ot'>" + (e.ot?"+"+e.ot:"—") + "</td>";
                         h += "<td class='td-loan'>" + (e.loans?"-"+e.loans:"—") + "</td>";
@@ -1791,7 +1826,7 @@
                     });
                     // صف الإجمالي
                     h += "<tr style='background:#e8f5e0;font-weight:900;'>";
-                    h += "<td class='td-name'>الإجمالي</td><td>—</td><td>—</td>";
+                    h += "<td class='td-name'>الإجمالي</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>";
                     h += "<td class='td-deduct'>-" + Math.round(totalDeduct) + "</td>";
                     h += "<td class='td-ot'>+" + Math.round(totalOT) + "</td>";
                     h += "<td class='td-loan'>-" + Math.round(totalLoans2) + "</td>";
@@ -1799,6 +1834,33 @@
                     h += "<td class='td-net'>" + Math.round(totalNet).toLocaleString() + "</td>";
                     h += "</tr>";
                     h += "</tbody></table></div>";
+
+                    // مقارنة الفروع
+                    var branchStats = {};
+                    empResults.forEach(function(e){
+                        var b = e.branch || "غير محدد";
+                        if (!branchStats[b]) branchStats[b] = {totalRate:0, count:0, totalNet:0};
+                        branchStats[b].totalRate += e.presenceRate;
+                        branchStats[b].count++;
+                        branchStats[b].totalNet += e.net;
+                    });
+                    var branchNames = Object.keys(branchStats);
+                    if (branchNames.length > 1) {
+                        h += "<div class='monthly-branch-compare'>";
+                        h += "<div class='monthly-stat-card-title'>&#127970; مقارنة الفروع</div>";
+                        h += "<div class='monthly-branch-grid'>";
+                        branchNames.forEach(function(bn){
+                            var bs = branchStats[bn];
+                            var avgRate = bs.count ? Math.round(bs.totalRate/bs.count) : 0;
+                            var rateColor = avgRate>=90 ? "var(--gd)" : (avgRate>=70 ? "#f57f17" : "var(--r)");
+                            h += "<div class='monthly-branch-card'>";
+                            h += "<div class='monthly-branch-name'>" + bn + "</div>";
+                            h += "<div class='monthly-branch-rate' style='color:" + rateColor + ";'>" + avgRate + "%</div>";
+                            h += "<div class='monthly-branch-sub'>متوسط الحضور &bull; " + bs.count + " موظف</div>";
+                            h += "</div>";
+                        });
+                        h += "</div></div>";
+                    }
 
                     // إجمالي الرواتب
                     h += "<div class='monthly-total'>";
@@ -2328,12 +2390,22 @@
                                 var om=parseInt(otTm.replace(/[^0-9]/g,""))||0;
                                 oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
                             }
+                            var ela=0,ell="";
+                            if(otTm&&otTm.indexOf("انصراف مبكر")>=0){
+                                var hMatch=otTm.match(/(\d+)\s*س/);
+                                var mMatch=otTm.match(/(\d+)\s*د/);
+                                var eh=hMatch?parseInt(hMatch[1]):0;
+                                var em=mMatch?parseInt(mMatch[1]):0;
+                                var totalEarlyMins=eh*60+em;
+                                ela=(totalEarlyMins/60)*sph;
+                                ell="انصراف مبكر "+(eh>0?eh+"س ":"")+(em>0?em+"د":"")+" — خصم الساعات الناقصة";
+                            }
                             if(it!=="--"&&ot!=="--"){
                                 var inMins=parseInt(it.split(":")[0])*60+parseInt(it.split(":")[1]);
                                 var outMins=parseInt(ot.split(":")[0])*60+parseInt(ot.split(":")[1]);
                                 if(outMins>inMins)totalMins+=(outMins-inMins);
                             }
-                            dl+=la;doa+=oa;tla+=la;toa+=oa;tlaNoAbsence+=la;
+                            dl+=la+ela;doa+=oa;tla+=la+ela;toa+=oa;tlaNoAbsence+=la+ela;
                             sh+="<div class='shift-row'><div style='font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;'>";
                             sh+="<span class='shift-branch-badge'>&#127970; "+(br||"—")+"</span>";
                             if(sf)sh+="<span style='font-size:.65rem;color:var(--m);'>"+sf+"</span>";
@@ -2341,7 +2413,7 @@
                             if(ot!=="--")sh+="<span class='shift-time-out'>&#9660; "+ot+"</span>";
                             else sh+="<span style='font-size:.72rem;color:var(--m);'>انصراف لم يسجل</span>";
                             sh+="</div>";
-                            if(ll||ol){sh+="<div class='shift-tags'>";if(ll)sh+="<span class='shift-tag-late'>&#9888; "+tm+" — "+ll+"</span>";if(ol)sh+="<span class='shift-tag-ot'>&#11088; "+ol+"</span>";sh+="</div>";}
+                            if(ll||ol||ell){sh+="<div class='shift-tags'>";if(ll)sh+="<span class='shift-tag-late'>&#9888; "+tm+" — "+ll+"</span>";if(ol)sh+="<span class='shift-tag-ot'>&#11088; "+ol+"</span>";if(ell)sh+="<span class='shift-tag-late' style='background:#fff3e0;border-color:#fb8c00;color:#e65100;'>&#8617; "+ell+"</span>";sh+="</div>";}
                             sh+="</div>";
                         });
                         var dn=spd-dl+doa;
