@@ -242,7 +242,7 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 <div class="powered">Powered by <b>Raef Essam</b></div>
 
 <script>
-var APPS="https://script.google.com/macros/s/AKfycbw1cvcxQdcYI7yP_6zRpCQpiOfihGGzRPkBwkOEZaTYQWEIoez_qhVJ7BkklLXfRn_PSg/exec";
+var APPS="https://script.google.com/macros/s/AKfycbyNL7y0wCQEcBkBXwEV9LKAgW1HyqZOw_nK3RNs7yBeFBcLxAUUcYYgSxI7NGOyo-DBZg/exec";
 var empData=null,clockTimer=null;
 
 setTimeout(function(){
@@ -312,7 +312,7 @@ function register(action){
     var timeStr=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
     var start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd),cur=toMins(timeStr);
     var timing="";
-    if(action==="حضور"){var late=cur-start;if(late>=5)timing="تأخير "+late+" دقيقة";}
+    if(action==="حضور"){var late=cur-start;if(late>=1)timing="تأخير "+late+" دقيقة";}
     else{var ot=cur-end-15;if(ot>0)timing="أوفر تايم "+Math.round(ot)+" دقيقة";}
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:empData.selectedBranch,shift:empData.selectedShift,recordAction:action,timing:timing})})
     .then(function(){

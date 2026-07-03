@@ -1685,7 +1685,7 @@
                         var dm2 = {};
                         recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
 
-                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0, lateCount = 0, empWorkMins = 0;
+                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0, lateCount = 0, empWorkMins = 0, earlyLeaveDeductEmp = 0;
                         for (var d2=startDay2;d2<=endDay3;d2++){
                             var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
                             if(new Date(yr,mn,d2).getDay()===5) continue;
@@ -1726,7 +1726,7 @@
                                     var mM=tm.match(/(\d+)\s*د/);
                                     var eh2=hM?parseInt(hM[1]):0;
                                     var em2=mM?parseInt(mM[1]):0;
-                                    lateDeduct+=((eh2*60+em2)/60)*sph2;
+                                    earlyLeaveDeductEmp+=((eh2*60+em2)/60)*sph2;
                                 }
                             });
                         }
@@ -1754,7 +1754,7 @@
                             }
                         });
 
-                        var netSalary = (spd*presentDays) - lateDeduct + otAmount - loans - leaveDeduct;
+                        var netSalary = (spd*presentDays) - lateDeduct - earlyLeaveDeductEmp + otAmount - loans - leaveDeduct;
 
                         // إحصائيات
                         totalBasic += salary;
