@@ -6,6 +6,7 @@
         <meta name="mobile-web-app-capable" content="yes"/>
         <meta name="apple-mobile-web-app-capable" content="yes"/>
         <title>Degla Smart Lab - إدارة</title>
+                <link rel="stylesheet" href="wc2026.css"/>
         <link rel="manifest" href="manifest.json"/>
         <meta name="theme-color" content="#4e9012"/>
         <link rel="apple-touch-icon" href="icon-180.png"/>
@@ -954,10 +955,24 @@
             #repIndividual {
                 overflow-y: visible;
             }
+50% { opacity: 1; transform: scale(1.2); }
+            }
 
-        </style>
+</style>
     </head>
     <body>
+        <!-- WC2026-START -->
+        <div class="wc-bar">
+            <span class="wc-bar-inner">
+                🇪🇬&nbsp; يلا يا فراعنة &nbsp;🏆&nbsp; FIFA World Cup 2026 &nbsp;
+                <span class="wc-bar-sep">|</span>
+                &nbsp; USA &bull; Canada &bull; Mexico &nbsp;
+                <span class="wc-bar-sep">|</span>
+                &nbsp; 🦅 مصر في كأس العالم &nbsp;🇪🇬&nbsp; يلا يا فراعنة &nbsp;🏆
+            </span>
+        </div>
+        <!-- WC2026-END -->
+
         <!-- TOAST -->
         <div class="toast" id="toast">
             <div class="toast-icon" id="ti"></div>
@@ -2463,7 +2478,7 @@
                 hdr.id = "repPrintHeader";
                 hdr.innerHTML =
                     "<div style='text-align:center;padding:8px 14px;background:#2d6e0e;color:white;border-radius:8px;margin-bottom:8px;'>" +
-                    "<div style='font-size:1rem;font-weight:900;'>Degla Smart Lab</div>" +
+                    "<div style='font-size:1rem;font-weight:900;display:flex;align-items:center;gap:6px;'>Degla Smart Lab</div>" +
                     "<div style='font-size:.75rem;margin-top:2px;opacity:.85;'>تقرير راتب — شهر " + mLabel + "</div>" +
                     "<div style='margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.3);font-size:.7rem;'>" +
                     "الاسم: <b>" + (_repEmp ? _repEmp.name : "") + "</b>  |  " +
