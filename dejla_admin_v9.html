@@ -957,6 +957,43 @@
 50% { opacity: 1; transform: scale(1.2); }
             }
 
+            /* ==== خصومات معلّقة / بيانات تحتاج مراجعة ==== */
+            .shift-tag-pending {
+                display:inline-flex;align-items:center;gap:4px;
+                background:#fff3e0;border:1px solid #ffb74d;color:#e65100;
+                font-size:.68rem;font-weight:700;border-radius:8px;padding:3px 8px;margin-top:4px;
+            }
+            .shift-tag-review {
+                display:inline-flex;align-items:center;gap:4px;
+                background:#fce4ec;border:1px solid #f06292;color:#ad1457;
+                font-size:.68rem;font-weight:700;border-radius:8px;padding:3px 8px;margin-top:4px;
+            }
+            .rep-sum-row.pending .rep-sum-val { color:#e65100; }
+            .rep-optimistic-note {
+                font-size:.68rem;color:var(--m);text-align:center;padding:6px 4px 2px;
+            }
+            .pending-card {
+                background:white;border:1.5px solid var(--b3);border-radius:12px;
+                padding:12px;margin-bottom:10px;
+            }
+            .pending-card.warn { border-color:#ffb74d;background:#fffaf3; }
+            .pending-card-head {
+                display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;
+            }
+            .pending-card-name { font-size:.85rem;font-weight:800; }
+            .pending-card-date { font-size:.7rem;color:var(--m); }
+            .pending-card-amt { font-size:.9rem;font-weight:900;color:var(--r); }
+            .pending-card-meta { font-size:.7rem;color:var(--m);margin-bottom:8px; }
+            .pending-card-exp { font-size:.65rem;font-weight:700;margin-bottom:8px; }
+            .pending-card-btns { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+            .pb-activate { background:var(--gl);color:var(--gd);border:none;border-radius:10px;padding:9px;font-family:Cairo,sans-serif;font-weight:800;font-size:.75rem;cursor:pointer; }
+            .pb-cancel { background:#ffebee;color:var(--r);border:none;border-radius:10px;padding:9px;font-family:Cairo,sans-serif;font-weight:800;font-size:.75rem;cursor:pointer; }
+            .pending-bulk-btn {
+                width:100%;padding:11px;border:none;border-radius:12px;
+                background:linear-gradient(135deg,#4e9012,#2d6e0e);color:white;
+                font-family:Cairo,sans-serif;font-size:.82rem;font-weight:800;cursor:pointer;margin-bottom:12px;
+            }
+            .pending-empty { text-align:center;color:var(--m);font-size:.8rem;padding:24px 10px; }
 </style>
     </head>
     <body>
@@ -1139,6 +1176,7 @@
                     <div class="rep-toggle-bar">
                         <button class="rep-toggle-btn act" id="repToggleInd" onclick="switchRepMode('individual')">&#128100; تقرير فردي</button>
                         <button class="rep-toggle-btn" id="repToggleMon" onclick="switchRepMode('monthly')">&#128202; تقرير شهري كامل</button>
+                        <button class="rep-toggle-btn" id="repTogglePend" onclick="switchRepMode('pending')">&#9203; خصومات معلّقة</button>
                     </div>
 
                     <!-- محتوى الوضع الفردي -->
@@ -1202,6 +1240,11 @@
                         <div id="monthlyContent"></div>
                     </div>
 
+                    <!-- محتوى الخصومات المعلّقة -->
+                    <div id="repPending" style="display:none;">
+                        <div id="pendingContent"><div class="ldots"><span class="ld"></span><span class="ld" style="animation-delay:.2s"></span><span class="ld" style="animation-delay:.4s"></span></div></div>
+                    </div>
+
                 </div>
             </div>
             <!-- NAV — fixed bottom مع safe area -->
@@ -1260,6 +1303,196 @@
                 if (b && b[shift]) return b[shift];
                 return 8; // افتراضي لو فرع/شيفت غير معروف
             }
+
+            // ══════════════════════════════════════════════════════════
+            // نظام الخصومات المعلّقة (تأخير شيفت 1) — تخزين محلي بالمتصفح
+            // ملاحظة: ده تخزين محلي (localStorage) حاليًا. عشان يتزامن على
+            // كل الأجهزة محتاج نضيف Sheet جديد في الـ Apps Script Backend
+            // اسمه "PendingDeductions" + Actions: getPendingDeductions /
+            // decidePendingDeduction — من غير ما نلمس أي Sheet موجود.
+            // ══════════════════════════════════════════════════════════
+            var PENDING_STORE_KEY = "degla_pending_deductions_v1";
+            var PENDING_WARN_DAYS = 30;   // بعد 30 يوم من نهاية الشهر: تنبيه
+            var PENDING_EXPIRE_DAYS = 60; // بعد 60 يوم: يتلغي خالص
+
+            function getPendingStore() {
+                try {
+                    var raw = localStorage.getItem(PENDING_STORE_KEY);
+                    return raw ? JSON.parse(raw) : {};
+                } catch(e) { return {}; }
+            }
+            function savePendingStore(store) {
+                try { localStorage.setItem(PENDING_STORE_KEY, JSON.stringify(store)); } catch(e) {}
+            }
+            function pendingId(code, date, shift) {
+                return code + "|" + date + "|" + shift;
+            }
+            function monthEndOf(dateStr) {
+                var p = dateStr.split("-");
+                var y = parseInt(p[0]), m = parseInt(p[1]);
+                return new Date(y, m, 0); // آخر يوم في الشهر
+            }
+            function daysSince(d) {
+                var ms = new Date().setHours(0,0,0,0) - new Date(d).setHours(0,0,0,0);
+                return Math.floor(ms / 86400000);
+            }
+            // يسجل خصم معلّق لو لسه مش موجود (من غير ما يبدّل قرار سابق)
+            function registerPendingDeduction(rec) {
+                var store = getPendingStore();
+                var id = pendingId(rec.code, rec.date, rec.shift);
+                if (!store[id]) {
+                    store[id] = {
+                        id: id, code: rec.code, name: rec.name, date: rec.date,
+                        shift: rec.shift, branch: rec.branch || "", amount: rec.amount,
+                        label: rec.label, status: "pending", createdAt: new Date().toISOString(),
+                        decidedAt: null
+                    };
+                    savePendingStore(store);
+                } else {
+                    // نحدّث القيمة لو اتغيّرت بيانات الحضور (نادر) بس نسيب القرار زي ما هو
+                    store[id].amount = rec.amount; store[id].label = rec.label;
+                    savePendingStore(store);
+                }
+                return store[id];
+            }
+            // يرجع حالة خصم معلّق بعد تطبيق قاعدة انتهاء الصلاحية (60 يوم)
+            function getPendingStatus(code, date, shift) {
+                var store = getPendingStore();
+                var id = pendingId(code, date, shift);
+                var rec = store[id];
+                if (!rec) return null;
+                if (rec.status === "pending") {
+                    var d = daysSince(monthEndOf(rec.date));
+                    if (d > PENDING_EXPIRE_DAYS) {
+                        rec.status = "expired"; rec.decidedAt = new Date().toISOString();
+                        store[id] = rec; savePendingStore(store);
+                    }
+                }
+                return rec;
+            }
+            function decidePendingDeduction(code, date, shift, decision, meta) {
+                var store = getPendingStore();
+                var id = pendingId(code, date, shift);
+                if (!store[id]) return null;
+                store[id].status = decision; // "activated" | "cancelled"
+                store[id].decidedAt = new Date().toISOString();
+                savePendingStore(store);
+                // نبعت نفس القرار للسيرفر (Sheet: PendingDeductions) عشان يتزامن
+                // على كل الأجهزة — mode:no-cors يعني مينفعش نقرأ الرد، بس بيتنفذ
+                try {
+                    fetch(URL, {method:"POST", mode:"no-cors", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
+                        action:"decidePendingDeduction", id:id, decision:decision,
+                        code:code, date:date, shift:shift,
+                        name:(meta&&meta.name)||store[id].name||"",
+                        branch:(meta&&meta.branch)||store[id].branch||"",
+                        amount:(meta&&meta.amount)||store[id].amount||0
+                    })});
+                } catch(e) {}
+                return store[id];
+            }
+            // يجيب كل الخصومات المعلّقة من السيرفر ويدمجها مع النسخة المحلية
+            // (السيرفر هو المصدر الأساسي للقرار؛ لو مش متاح نستخدم النسخة المحلية)
+            function syncPendingFromServer() {
+                return fetch(URL + "?action=getPendingDeductions").then(function(r){ return r.json(); }).then(function(data){
+                    var records = data.records || [];
+                    if (!records.length) return;
+                    var store = getPendingStore();
+                    records.forEach(function(r){
+                        if (!r.id) return;
+                        store[r.id] = {
+                            id: r.id, code: r.code, name: r.name, date: r.date, shift: r.shift,
+                            branch: r.branch, amount: parseFloat(r.amount)||0, label: r.label,
+                            status: r.status || "pending", createdAt: r.createdAt || "", decidedAt: r.decidedAt || null
+                        };
+                    });
+                    savePendingStore(store);
+                }).catch(function(){ /* لو السيرفر لسه مش متزامن، نكمل بالنسخة المحلية */ });
+            }
+
+            // حساب خصم التأخير — مصدر واحد موحّد (بدل التكرار في أكتر من مكان)
+            // shift1: أي تأخير = خصم 3 أيام، بس "معلّق" لحد ما صاحب العمل يفعّله
+            // shift2 (أو غيره): تدرج عادي فوري (مش معلّق)
+            function calcLatePenalty(shift, ms, spd, sph, spm) {
+                var isShift1 = (shift === "شيفت 1" || shift === "شيفت1");
+                if (isShift1) {
+                    if (ms >= 1) return { amount: spd*3, label: "خصم 3 أيام (تأخير شيفت 1)", pending: true };
+                    return { amount: 0, label: "", pending: false };
+                }
+                if (ms >= 30) return { amount: spd, label: "خصم يوم كامل", pending: false };
+                if (ms >= 15) return { amount: spd/2, label: "خصم نص يوم", pending: false };
+                if (ms >= 10) return { amount: sph, label: "خصم ساعة", pending: false };
+                if (ms >= 5)  return { amount: spm*10, label: "خصم 10 دقائق", pending: false };
+                return { amount: 0, label: "", pending: false };
+            }
+
+            // يحسب كل شيفتات يوم واحد (يزاوج كل دخول مع خروجه) — مصدر واحد
+            // مستخدم في التقرير الفردي والتقرير الشهري عشان الأرقام متطابقة دايمًا
+            function computeShiftFinancials(ins, outs, spd, empCode, empName, dateStr) {
+                var totalMins = 0;
+                var shifts = [];
+                var todayStr = new Date().toISOString().slice(0,10);
+                ins.forEach(function(inn, i){
+                    var out = outs[i] || null;
+                    var br = inn.branch || "";
+                    var sf = inn.shift || "";
+                    var it = inn.time ? inn.time.slice(0,5) : "--";
+                    var ot = out ? out.time.slice(0,5) : "--";
+                    var tm = inn.timing || "";
+                    var otTm = out ? (out.timing || "") : "";
+                    var shHours = getShiftHours(br, sf);
+                    var sph = spd/shHours, spm = sph/60;
+
+                    // كشف بيانات ناقصة: دخول وخروج بنفس التوقيت بالظبط (بصمة خطأ)
+                    var duplicatePunch = !!(out && it !== "--" && ot !== "--" && it === ot);
+                    // الشيفت لسه مفتوح (مفيش انصراف خالص): لو النهاردة → نأجل الحساب لحد
+                    // ما الانصراف يتسجل. لو يوم فات وعدى ولسه مفيش انصراف → بيانات ناقصة تحتاج مراجعة
+                    var openToday = (!out && dateStr === todayStr);
+                    var openPastDay = (!out && dateStr < todayStr);
+                    var needsReview = duplicatePunch || openPastDay;
+
+                    var la=0, ll="", pending=false, oa=0, ol="", ela=0, ell="";
+                    if (!needsReview && !openToday) {
+                        if (tm && tm.indexOf("تأخير") >= 0) {
+                            var ms = parseInt(tm.replace(/[^0-9]/g,"")) || 0;
+                            var pen = calcLatePenalty(sf, ms, spd, sph, spm);
+                            la = pen.amount; ll = pen.label; pending = pen.pending;
+                        }
+                        if (otTm && otTm.indexOf("أوفر") >= 0) {
+                            var om = parseInt(otTm.replace(/[^0-9]/g,"")) || 0;
+                            oa = (om/60)*sph*1.5; ol = "أوفر تايم " + om + " د";
+                        }
+                        if (otTm && otTm.indexOf("انصراف مبكر") >= 0) {
+                            var hMatch = otTm.match(/(\d+)\s*س/);
+                            var mMatch = otTm.match(/(\d+)\s*د/);
+                            var eh = hMatch ? parseInt(hMatch[1]) : 0;
+                            var em = mMatch ? parseInt(mMatch[1]) : 0;
+                            var totalEarlyMins = eh*60+em;
+                            ela = (totalEarlyMins/60)*sph;
+                            ell = "انصراف مبكر " + (eh>0?eh+"س ":"") + (em>0?em+"د":"") + " — خصم الساعات الناقصة";
+                        }
+                    }
+                    var pendingRec = null;
+                    if (pending && !needsReview && !openToday) {
+                        pendingRec = registerPendingDeduction({
+                            code: empCode, name: empName, date: dateStr, shift: sf,
+                            branch: br, amount: la, label: ll
+                        });
+                    }
+                    if (it !== "--" && ot !== "--") {
+                        var inMins = parseInt(it.split(":")[0])*60 + parseInt(it.split(":")[1]);
+                        var outMins = parseInt(ot.split(":")[0])*60 + parseInt(ot.split(":")[1]);
+                        if (outMins > inMins) totalMins += (outMins - inMins);
+                    }
+                    shifts.push({
+                        branch: br, shift: sf, inTime: it, outTime: ot, timing: tm, otTiming: otTm,
+                        needsReview: needsReview, openToday: openToday,
+                        lateAmount: la, lateLabel: ll, latePending: pending, pendingRec: pendingRec,
+                        otAmount: oa, otLabel: ol, earlyAmount: ela, earlyLabel: ell
+                    });
+                });
+                return { shifts: shifts, totalMins: totalMins };
+            }
+
             function timeToMinsJS(t) {
                 if (!t) return 0;
                 var p = t.toString().trim().split(":");
@@ -1339,7 +1572,7 @@
                 if (n === 1) loadE();
                 if (n === 3) loadA();
                 if (n === 4) loadReq();
-                if (n === 5) loadRepList();
+                if (n === 5) { syncPendingFromServer().then(loadRepList); loadRepList(); }
             }
 
             function ldHTML() {
@@ -1625,6 +1858,9 @@
             var _monthlyMode = "individual";
 
             function switchRepMode(mode) {
+                document.getElementById("repPending").style.display = mode === "pending" ? "block" : "none";
+                document.getElementById("repTogglePend").className = "rep-toggle-btn" + (mode==="pending"?" act":"");
+                if (mode === "pending") { renderPendingTab(); }
                 _monthlyMode = mode;
                 document.getElementById("repIndividual").style.display = mode === "individual" ? "block" : "none";
                 document.getElementById("repMonthly").style.display = mode === "monthly" ? "block" : "none";
@@ -1662,6 +1898,7 @@
                     // حساب كل موظف
                     var empResults = [];
                     var totalBasic = 0, totalDeduct = 0, totalOT = 0, totalLoans2 = 0, totalLeaveD = 0, totalNet = 0;
+                    var totalPending = 0, totalReview = 0;
                     var maxPresent = {name:"", days:0}, maxAbsent = {name:"", days:0};
                     var alerts = [];
                     var totalPresenceDays = 0, totalWd = 0;
@@ -1689,6 +1926,7 @@
                         recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
 
                         var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0, lateCount = 0, empWorkMins = 0, earlyLeaveDeductEmp = 0;
+                        var pendingDeductEmp = 0, reviewCountEmp = 0;
                         for (var d2=startDay2;d2<=endDay3;d2++){
                             var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
                             if(new Date(yr,mn,d2).getDay()===5) continue;
@@ -1697,40 +1935,23 @@
                             presentDays++;
                             var insDay = dr2.filter(function(r){return r.action==="حضور";});
                             var outsDay = dr2.filter(function(r){return r.action==="انصراف";});
-                            if (insDay.length && outsDay.length) {
-                                var firstInM = timeToMinsJS(insDay[0].time);
-                                var lastOutM = timeToMinsJS(outsDay[outsDay.length-1].time);
-                                if (lastOutM > firstInM) empWorkMins += (lastOutM - firstInM);
-                            }
-                            dr2.forEach(function(r){
-                                var tm = r.timing || "";
-                                var sf2 = r.shift || "";
-                                var br2 = r.branch || "";
-                                var isShift1b = (sf2==="شيفت 1"||sf2==="شيفت1");
-                                var sph2 = spd / getShiftHours(br2, sf2);
-                                if(tm.indexOf("تأخير")>=0){
-                                    var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
+                            var dayCalc = computeShiftFinancials(insDay, outsDay, spd, emp.code, emp.name, dt);
+                            empWorkMins += dayCalc.totalMins;
+                            dayCalc.shifts.forEach(function(s){
+                                if (s.needsReview) { reviewCountEmp++; return; }
+                                if (s.lateAmount > 0) {
                                     lateCount++;
-                                    if(isShift1b && ms>=1){
-                                        lateDeduct+=spd*3;
-                                    } else if(!isShift1b){
-                                        if(ms>=30) lateDeduct+=spd;
-                                        else if(ms>=15) lateDeduct+=spd/2;
-                                        else if(ms>=10) lateDeduct+=sph2;
-                                        else if(ms>=5) lateDeduct+=sph2/60*10;
+                                    if (s.latePending) {
+                                        var st = getPendingStatus(emp.code, dt, s.shift);
+                                        if (st && st.status === "activated") lateDeduct += s.lateAmount;
+                                        else if (st && st.status === "pending") pendingDeductEmp += s.lateAmount;
+                                        // "cancelled" أو "expired" = صفر، مفيش تأثير
+                                    } else {
+                                        lateDeduct += s.lateAmount;
                                     }
                                 }
-                                if(tm.indexOf("أوفر")>=0){
-                                    var om=parseInt(tm.replace(/[^0-9]/g,""))||0;
-                                    otAmount+=(om/60)*sph2*1.5;
-                                }
-                                if(tm.indexOf("انصراف مبكر")>=0){
-                                    var hM=tm.match(/(\d+)\s*س/);
-                                    var mM=tm.match(/(\d+)\s*د/);
-                                    var eh2=hM?parseInt(hM[1]):0;
-                                    var em2=mM?parseInt(mM[1]):0;
-                                    earlyLeaveDeductEmp+=((eh2*60+em2)/60)*sph2;
-                                }
+                                otAmount += s.otAmount;
+                                earlyLeaveDeductEmp += s.earlyAmount;
                             });
                         }
 
@@ -1757,7 +1978,8 @@
                             }
                         });
 
-                        var netSalary = (spd*presentDays) - lateDeduct - earlyLeaveDeductEmp + otAmount - loans - leaveDeduct;
+                        var netSalaryRaw = (spd*presentDays) - lateDeduct - earlyLeaveDeductEmp + otAmount - loans - leaveDeduct;
+                        var netSalary = Math.max(0, netSalaryRaw); // حد أدنى: الصافي مايبقاش سالب
 
                         // إحصائيات
                         totalBasic += salary;
@@ -1767,11 +1989,15 @@
                         totalLeaveD += leaveDeduct;
                         totalNet += netSalary;
                         totalPresenceDays += presentDays;
+                        totalPending += pendingDeductEmp;
+                        totalReview += reviewCountEmp;
 
                         if(presentDays > maxPresent.days){ maxPresent = {name:emp.name, days:presentDays}; }
                         if(absentDays > maxAbsent.days){ maxAbsent = {name:emp.name, days:absentDays}; }
                         if(absentDays >= 5){ alerts.push(emp.name + " — غياب " + absentDays + " يوم"); }
                         if(loans >= salary * 0.5){ alerts.push(emp.name + " — سلفة كبيرة (" + Math.round(loans) + " ج.م)"); }
+                        if(pendingDeductEmp > 0){ alerts.push(emp.name + " — عنده خصومات معلّقة بانتظار قرارك (" + Math.round(pendingDeductEmp) + " ج.م)"); }
+                        if(reviewCountEmp > 0){ alerts.push(emp.name + " — " + reviewCountEmp + " بصمة تحتاج مراجعة (بيانات دخول/خروج ناقصة)"); }
 
                         var presenceRateEmp = (presentDays+absentDays) ? Math.round(presentDays/(presentDays+absentDays)*100) : 0;
                         var avgDailyHours = presentDays ? Math.round((empWorkMins/presentDays/60)*10)/10 : 0;
@@ -1781,7 +2007,7 @@
                             salary: salary, present: presentDays, absent: absentDays,
                             deduct: Math.round(lateDeduct), ot: Math.round(otAmount),
                             loans: Math.round(loans), leaveD: Math.round(leaveDeduct),
-                            net: Math.round(netSalary),
+                            net: Math.round(netSalary), pending: Math.round(pendingDeductEmp), review: reviewCountEmp,
                             presenceRate: presenceRateEmp, avgHours: avgDailyHours, lateCount: lateCount
                         });
                     });
@@ -1814,7 +2040,10 @@
                         var netClass = e.net < 0 ? "td-net negative" : "td-net";
                         var rateColor = e.presenceRate>=90 ? "var(--gd)" : (e.presenceRate>=70 ? "#f57f17" : "var(--r)");
                         h += "<tr>";
-                        h += "<td class='td-name'>" + e.name + "<br><span style='font-size:.65rem;color:var(--m);'>" + e.branch + "</span></td>";
+                        var badges = "";
+                        if (e.pending > 0) badges += "<span class='shift-tag-pending' style='margin-right:4px;'>&#9203; معلّق " + e.pending + " ج.م</span>";
+                        if (e.review > 0) badges += "<span class='shift-tag-review'>&#9888; " + e.review + " يحتاج مراجعة</span>";
+                        h += "<td class='td-name'>" + e.name + "<br><span style='font-size:.65rem;color:var(--m);'>" + e.branch + "</span>" + (badges?"<br>"+badges:"") + "</td>";
                         h += "<td>" + e.present + "</td>";
                         h += "<td style='color:var(--r);'>" + e.absent + "</td>";
                         h += "<td style='color:" + rateColor + ";font-weight:800;'>" + e.presenceRate + "%</td>";
@@ -1873,7 +2102,10 @@
                     h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي الأوفر تايم</span><span class='monthly-total-val' style='color:var(--gd);'>+ " + Math.round(totalOT).toLocaleString() + " ج.م</span></div>";
                     h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي السلف</span><span class='monthly-total-val' style='color:#7b1fa2;'>- " + Math.round(totalLoans2).toLocaleString() + " ج.م</span></div>";
                     h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>إجمالي خصم الإذن</span><span class='monthly-total-val' style='color:var(--r);'>- " + Math.round(totalLeaveD).toLocaleString() + " ج.م</span></div>";
+                    if (totalPending > 0) h += "<div class='monthly-total-row pending'><span class='monthly-total-lbl'>&#9203; خصومات معلّقة (لسه مش مؤثرة)</span><span class='monthly-total-val' style='color:#e65100;'>" + Math.round(totalPending).toLocaleString() + " ج.م</span></div>";
+                    if (totalReview > 0) h += "<div class='monthly-total-row'><span class='monthly-total-lbl'>&#9888; بصمات تحتاج مراجعة</span><span class='monthly-total-val' style='color:#ad1457;'>" + totalReview + "</span></div>";
                     h += "<div class='monthly-net-box'><div class='monthly-net-lbl'>إجمالي صافي الرواتب</div><div class='monthly-net-val'>" + Math.round(totalNet).toLocaleString() + " ج.م</div></div>";
+                    if (totalPending > 0) h += "<div class='rep-optimistic-note'>* الصافي ده مبدئي (متفائل) وميشملش الخصومات المعلّقة لحد ما تتفعّل من تاب \"خصومات معلّقة\"</div>";
                     h += "</div>";
 
                     // زرار واتساب لكل الموظفين
@@ -1888,6 +2120,111 @@
 
 
                 }).catch(function(){ document.getElementById("monthlyContent").innerHTML = "<div class='empty'>تعذر تحميل البيانات</div>"; });
+            }
+
+            // ══════════════════════════════════════════════════════════
+            // تاب "الخصومات المعلّقة"
+            // ══════════════════════════════════════════════════════════
+            function workingDaysFullMonth(y, m0) {
+                var dim = new Date(y, m0+1, 0).getDate();
+                var wd = 0;
+                for (var d=1; d<=dim; d++) { if (new Date(y,m0,d).getDay()!==5) wd++; }
+                return wd;
+            }
+            // يفحص آخر 100 يوم من الحضور لكل الموظفين النشطين، ويسجّل أي
+            // خصم شيفت-1 معلّق لسه مش مسجّل في المخزن (بدون ما يلمس قرارات سابقة)
+            function scanAndRegisterPending(emps, allRecs) {
+                var todayD = new Date(); todayD.setHours(0,0,0,0);
+                var cutoff = new Date(todayD.getTime() - 100*86400000);
+                var byEmpDate = {};
+                allRecs.forEach(function(r){
+                    if (!r.date || !r.code) return;
+                    var rd = new Date(r.date); if (isNaN(rd)) return;
+                    if (rd < cutoff) return;
+                    var k = r.code + "|" + r.date;
+                    if (!byEmpDate[k]) byEmpDate[k] = [];
+                    byEmpDate[k].push(r);
+                });
+                var empMap = {};
+                emps.forEach(function(e){ empMap[e.code] = e; });
+                Object.keys(byEmpDate).forEach(function(k){
+                    var parts = k.split("|"); var code = parts[0], date = parts[1];
+                    var emp = empMap[code]; if (!emp || !emp.salary) return;
+                    var dParts = date.split("-");
+                    var spd = parseFloat(emp.salary) / (workingDaysFullMonth(parseInt(dParts[0]), parseInt(dParts[1])-1) || 26);
+                    var recs = byEmpDate[k];
+                    var ins = recs.filter(function(r){return r.action==="حضور";});
+                    var outs = recs.filter(function(r){return r.action==="انصراف";});
+                    if (!ins.length) return;
+                    computeShiftFinancials(ins, outs, spd, code, emp.name, date); // له أثر جانبي: تسجيل المعلّق
+                });
+            }
+            function renderPendingTab() {
+                document.getElementById("pendingContent").innerHTML = ldHTML();
+                Promise.all([
+                    fetch(URL + "?action=getEmployees").then(function(r){return r.json();}),
+                    fetch(URL + "?action=getAttendance").then(function(r){return r.json();}),
+                    syncPendingFromServer()
+                ]).then(function(results){
+                    var emps = (results[0].employees || []).filter(function(e){ return e.salary; });
+                    var allRecs = results[1].records || [];
+                    scanAndRegisterPending(emps, allRecs);
+
+                    var store = getPendingStore();
+                    var list = Object.keys(store).map(function(id){ return store[id]; })
+                        .filter(function(r){
+                            // يطبّق قاعدة انتهاء الصلاحية (60 يوم) وقت العرض
+                            if (r.status === "pending") {
+                                var d = daysSince(monthEndOf(r.date));
+                                if (d > PENDING_EXPIRE_DAYS) { r.status = "expired"; r.decidedAt = new Date().toISOString(); }
+                            }
+                            return r.status === "pending";
+                        });
+                    savePendingStore(store); // حفظ أي تحديث لحالة انتهاء الصلاحية
+                    list.sort(function(a,b){ return new Date(a.date) - new Date(b.date); });
+
+                    var h = "";
+                    if (!list.length) {
+                        h = "<div class='pending-empty'>&#10003; مفيش خصومات معلّقة محتاجة قرار دلوقتي</div>";
+                        document.getElementById("pendingContent").innerHTML = h;
+                        return;
+                    }
+                    h += "<button class='pending-bulk-btn' onclick='bulkActivatePending()'>&#9989; فعّل كل الخصومات المعلّقة (" + list.length + ")</button>";
+                    list.forEach(function(r){
+                        var daysLeft = PENDING_EXPIRE_DAYS - daysSince(monthEndOf(r.date));
+                        var warn = daysLeft <= (PENDING_EXPIRE_DAYS - PENDING_WARN_DAYS);
+                        var dobj = new Date(r.date);
+                        var dlbl = _dNames[dobj.getDay()] + " " + dobj.getDate() + " " + _mNames[dobj.getMonth()];
+                        h += "<div class='pending-card" + (warn?" warn":"") + "'>";
+                        h += "<div class='pending-card-head'><span class='pending-card-name'>" + r.name + "</span><span class='pending-card-amt'>-" + Math.round(r.amount) + " ج.م</span></div>";
+                        h += "<div class='pending-card-date'>&#128197; " + dlbl + " &bull; " + (r.branch||"") + " &bull; " + r.shift + "</div>";
+                        h += "<div class='pending-card-meta'>" + r.label + "</div>";
+                        h += "<div class='pending-card-exp' style='color:" + (warn?"#e65100":"var(--m)") + ";'>" + (daysLeft>0 ? "&#9203; هينتهي تلقائيًا خلال " + daysLeft + " يوم" : "&#9203; هينتهي قريب جدًا") + "</div>";
+                        h += "<div class='pending-card-btns'>";
+                        h += "<button class='pb-activate' onclick=\"decidePendingUI('" + r.id + "','activated')\">&#9989; فعّل الخصم</button>";
+                        h += "<button class='pb-cancel' onclick=\"decidePendingUI('" + r.id + "','cancelled')\">&#10060; إلغاء</button>";
+                        h += "</div></div>";
+                    });
+                    document.getElementById("pendingContent").innerHTML = h;
+                }).catch(function(){ document.getElementById("pendingContent").innerHTML = "<div class='empty'>تعذر تحميل البيانات</div>"; });
+            }
+            function decidePendingUI(id, decision) {
+                var parts = id.split("|");
+                decidePendingDeduction(parts[0], parts[1], parts[2], decision);
+                toast(decision==="activated"?"✅":"🗑️", decision==="activated"?"تم تفعيل الخصم":"تم إلغاء الخصم", "");
+                renderPendingTab();
+            }
+            function bulkActivatePending() {
+                var store = getPendingStore();
+                Object.keys(store).forEach(function(id){
+                    if (store[id].status === "pending") {
+                        store[id].status = "activated";
+                        store[id].decidedAt = new Date().toISOString();
+                    }
+                });
+                savePendingStore(store);
+                toast("✅", "تم تفعيل كل الخصومات المعلّقة", "");
+                renderPendingTab();
             }
 
             function sendAllSalariesWA(emps, monthLabel) {
@@ -2351,7 +2688,7 @@
                         days.push(dt);
                     }
 
-                    var tp=0,ta=0,tla=0,toa=0,tlaNoAbsence=0,h="";
+                    var tp=0,ta=0,tla=0,toa=0,tlaNoAbsence=0,tPending=0,tReview=0,h="";
                     days.forEach(function(dt){
                         var dr=dm[dt]||[];
                         var dobj=new Date(dt);
@@ -2365,67 +2702,61 @@
                         tp++;
                         var ins=dr.filter(function(r){return r.action==="حضور";});
                         var outs=dr.filter(function(r){return r.action==="انصراف";});
-                        var dl=0,doa=0,sh="",totalMins=0;
-                        ins.forEach(function(inn,i){
-                            var out=outs[i]||null;
-                            var br=inn.branch||"";
-                            var sf=inn.shift||"";
-                            var it=inn.time?inn.time.slice(0,5):"--";
-                            var ot=out?out.time.slice(0,5):"--";
-                            var tm=inn.timing||"";
-                            var otTm=out?(out.timing||""):"";
-                            var shHours=getShiftHours(br,sf);
-                            var sph=spd/shHours, spm=sph/60;
-                            var la=0,oa=0,ll="",ol="";
-                            if(tm&&tm.indexOf("تأخير")>=0){
-                                var ms=parseInt(tm.replace(/[^0-9]/g,""))||0;
-                                var isShift1 = (sf==="شيفت 1"||sf==="شيفت1");
-                                if(isShift1 && ms>=1){
-                                    la=spd*3;ll="خصم 3 أيام (تأخير شيفت 1)";
-                                } else if(!isShift1){
-                                    if(ms>=30){la=spd;ll="خصم يوم كامل";}
-                                    else if(ms>=15){la=spd/2;ll="خصم نص يوم";}
-                                    else if(ms>=10){la=sph;ll="خصم ساعة";}
-                                    else if(ms>=5){la=spm*10;ll="خصم 10 دقائق";}
+                        var dayCalc = computeShiftFinancials(ins, outs, spd, _repEmp.code, _repEmp.name, dt);
+                        var dl=0,doa=0,dPending=0,sh="",totalMins=dayCalc.totalMins;
+                        dayCalc.shifts.forEach(function(s){
+                            var br=s.branch, sf=s.shift, it=s.inTime, ot=s.outTime, tm=s.timing;
+                            var tagParts = [];
+                            if (s.needsReview) {
+                                tReview++;
+                                if (ot === "--") {
+                                    tagParts.push("<span class='shift-tag-review'>&#9888; الانصراف متسجلش خالص لليوم ده — بيانات ناقصة، يحتاج مراجعة (بدون خصم تلقائي)</span>");
+                                } else {
+                                    tagParts.push("<span class='shift-tag-review'>&#9888; دخول وخروج بنفس التوقيت — بيانات ناقصة، يحتاج مراجعة (بدون خصم أو أوفر تايم تلقائي)</span>");
                                 }
+                            } else if (s.openToday) {
+                                tagParts.push("<span class='shift-tag-pending' style='background:#e3f2fd;border-color:#64b5f6;color:#1565c0;'>&#9203; الشيفت لسه مفتوح — الانصراف لم يسجل بعد، الخصم هيتحسب تلقائيًا لما يتسجل</span>");
+                            } else {
+                                if (s.lateAmount > 0) {
+                                    if (s.latePending) {
+                                        var st = getPendingStatus(_repEmp.code, dt, sf);
+                                        if (st && st.status === "activated") {
+                                            dl += s.lateAmount;
+                                            tagParts.push("<span class='shift-tag-late'>&#9888; "+tm+" — "+s.lateLabel+" (تم التفعيل من صاحب العمل)</span>");
+                                        } else if (st && st.status === "cancelled") {
+                                            tagParts.push("<span class='shift-tag-pending' style='background:#e8f5e0;border-color:#a5d6a7;color:#2e7d32;'>&#10003; "+tm+" — تم إلغاء الخصم من صاحب العمل</span>");
+                                        } else if (st && st.status === "expired") {
+                                            tagParts.push("<span class='shift-tag-pending' style='opacity:.7;'>&#8987; "+tm+" — انتهت صلاحية الخصم المعلّق (اتلغى تلقائيًا بعد 60 يوم)</span>");
+                                        } else {
+                                            dPending += s.lateAmount;
+                                            tagParts.push("<span class='shift-tag-pending'>&#9203; "+tm+" — "+s.lateLabel+" (معلّق بانتظار قرار صاحب العمل)</span>");
+                                        }
+                                    } else {
+                                        dl += s.lateAmount;
+                                        tagParts.push("<span class='shift-tag-late'>&#9888; "+tm+" — "+s.lateLabel+"</span>");
+                                    }
+                                }
+                                if (s.otAmount > 0) { doa += s.otAmount; tagParts.push("<span class='shift-tag-ot'>&#11088; "+s.otLabel+"</span>"); }
+                                if (s.earlyAmount > 0) { dl += s.earlyAmount; tagParts.push("<span class='shift-tag-late' style='background:#fff3e0;border-color:#fb8c00;color:#e65100;'>&#8617; "+s.earlyLabel+"</span>"); }
                             }
-                            if(otTm&&otTm.indexOf("أوفر")>=0){
-                                var om=parseInt(otTm.replace(/[^0-9]/g,""))||0;
-                                oa=(om/60)*sph*1.5;ol="أوفر تايم "+om+" د";
-                            }
-                            var ela=0,ell="";
-                            if(otTm&&otTm.indexOf("انصراف مبكر")>=0){
-                                var hMatch=otTm.match(/(\d+)\s*س/);
-                                var mMatch=otTm.match(/(\d+)\s*د/);
-                                var eh=hMatch?parseInt(hMatch[1]):0;
-                                var em=mMatch?parseInt(mMatch[1]):0;
-                                var totalEarlyMins=eh*60+em;
-                                ela=(totalEarlyMins/60)*sph;
-                                ell="انصراف مبكر "+(eh>0?eh+"س ":"")+(em>0?em+"د":"")+" — خصم الساعات الناقصة";
-                            }
-                            if(it!=="--"&&ot!=="--"){
-                                var inMins=parseInt(it.split(":")[0])*60+parseInt(it.split(":")[1]);
-                                var outMins=parseInt(ot.split(":")[0])*60+parseInt(ot.split(":")[1]);
-                                if(outMins>inMins)totalMins+=(outMins-inMins);
-                            }
-                            dl+=la+ela;doa+=oa;tla+=la+ela;toa+=oa;tlaNoAbsence+=la+ela;
+                            var tagsHtml = tagParts.length ? ("<div class='shift-tags'>" + tagParts.join("") + "</div>") : "";
                             sh+="<div class='shift-row'><div style='font-size:.72rem;font-weight:700;color:var(--m);margin-bottom:6px;display:flex;align-items:center;gap:6px;'>";
                             sh+="<span class='shift-branch-badge'>&#127970; "+(br||"—")+"</span>";
                             if(sf)sh+="<span style='font-size:.65rem;color:var(--m);'>"+sf+"</span>";
                             sh+="</div><div class='shift-times'><span class='shift-time-in'>&#9650; "+it+"</span>";
                             if(ot!=="--")sh+="<span class='shift-time-out'>&#9660; "+ot+"</span>";
                             else sh+="<span style='font-size:.72rem;color:var(--m);'>انصراف لم يسجل</span>";
-                            sh+="</div>";
-                            if(ll||ol||ell){sh+="<div class='shift-tags'>";if(ll)sh+="<span class='shift-tag-late'>&#9888; "+tm+" — "+ll+"</span>";if(ol)sh+="<span class='shift-tag-ot'>&#11088; "+ol+"</span>";if(ell)sh+="<span class='shift-tag-late' style='background:#fff3e0;border-color:#fb8c00;color:#e65100;'>&#8617; "+ell+"</span>";sh+="</div>";}
-                            sh+="</div>";
+                            sh+="</div>"+tagsHtml+"</div>";
                         });
+                        tla+=dl; toa+=doa; tlaNoAbsence+=dl; tPending+=dPending;
                         var dn=spd-dl+doa;
                         var hrsLbl="";
                         if(totalMins>0){
                             var hh=Math.floor(totalMins/60), mm=totalMins%60;
                             hrsLbl="<div class='day-card-hours'>&#9201; "+hh+" س"+(mm>0?" "+mm+" د":"")+"</div>";
                         }
-                        h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div style='display:flex;align-items:center;gap:8px;'>"+hrsLbl+"<div class='day-card-net'>&#128176; "+Math.round(dn)+" ج.م</div></div></div><div class='day-card-body'>"+sh+"</div></div>";
+                        var pendingBadge = dPending>0 ? "<div class='day-card-hours' style='color:#e65100;'>&#9203; "+Math.round(dPending)+" معلّق</div>" : "";
+                        h+="<div class='day-card'><div class='day-card-head'><div class='day-card-date'>&#128197; "+dlbl+"</div><div style='display:flex;align-items:center;gap:8px;'>"+hrsLbl+pendingBadge+"<div class='day-card-net'>&#128176; "+Math.round(dn)+" ج.م</div></div></div><div class='day-card-body'>"+sh+"</div></div>";
                     });
 
                     // إضافة كروت الإذن والسلفة
@@ -2433,7 +2764,10 @@
                     if (loanCards) h += loanCards;
 
                     // صافي الراتب = (راتب اليوم × أيام الحضور الفعلية) + الأوفر تايم + بدل الجمعة - خصومات التأخير - السلف
-                    var ns = (spd*tp) - tlaNoAbsence + toa - totalLoans - totalLeaveDeduct;
+                    // ملاحظة: الخصومات المعلّقة (تأخير شيفت 1 لسه من غير قرار) مش داخلة هنا —
+                    // الصافي ده "متفائل" لحد ما صاحب العمل يفعّلها من تاب "خصومات معلّقة"
+                    var nsRaw = (spd*tp) - tlaNoAbsence + toa - totalLoans - totalLeaveDeduct;
+                    var ns = Math.max(0, nsRaw); // حد أدنى: الصافي مايبقاش سالب
                     h+="<div class='rep-summary'><div class='rep-sum-title'>&#128202; إجمالي "+(_repRange?"الفترة المحددة":"شهر "+_mNames[mn])+"</div>";
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الحضور</span><span class='rep-sum-val'>"+tp+" يوم</span></div>";
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>أيام الغياب</span><span class='rep-sum-val' style='color:var(--r);'>"+ta+" يوم</span></div>";
@@ -2441,8 +2775,12 @@
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>إجمالي الأوفر تايم</span><span class='rep-sum-val' style='color:var(--gd);'>+ "+Math.round(toa)+" ج.م</span></div>";
                     if (totalLoans > 0) h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>السلف المعتمدة</span><span class='rep-sum-val' style='color:#7b1fa2;'>- "+Math.round(totalLoans)+" ج.م</span></div>";
                     if (totalLeaveDeduct > 0) h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>خصم الإذن</span><span class='rep-sum-val' style='color:var(--r);'>- "+Math.round(totalLeaveDeduct)+" ج.م</span></div>";
+                    if (tPending > 0) h+="<div class='rep-sum-row pending'><span class='rep-sum-lbl'>&#9203; خصومات معلّقة (لسه مش مؤثرة)</span><span class='rep-sum-val'>"+Math.round(tPending)+" ج.م</span></div>";
+                    if (tReview > 0) h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>&#9888; بصمات تحتاج مراجعة</span><span class='rep-sum-val' style='color:#ad1457;'>"+tReview+"</span></div>";
                     h+="<div class='rep-sum-row'><span class='rep-sum-lbl'>الراتب الأساسي</span><span class='rep-sum-val'>"+Number(_repEmp.salary).toLocaleString()+" ج.م</span></div>";
-                    h+="<div class='rep-net-box'><div class='rep-net-lbl'>صافي الراتب</div><div class='rep-net-val'>"+Math.round(ns).toLocaleString()+" ج.م</div></div></div>";
+                    h+="<div class='rep-net-box'><div class='rep-net-lbl'>صافي الراتب</div><div class='rep-net-val'>"+Math.round(ns).toLocaleString()+" ج.م</div></div>";
+                    if (tPending > 0) h+="<div class='rep-optimistic-note'>* الرقم ده مبدئي (متفائل) وميشملش الخصومات المعلّقة — راجعها من تاب \"خصومات معلّقة\" قبل ما تبعت التقرير للموظف</div>";
+                    h+="</div>";
                     document.getElementById("repContent").innerHTML = h;
                     document.getElementById("repPrintBtns").style.display = "grid";
                 }).catch(function(){document.getElementById("repContent").innerHTML="<div class='empty'>تعذر تحميل البيانات</div>";});
