@@ -132,20 +132,8 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .powered { text-align:center; font-size:.7rem; color:var(--m); padding:16px; margin-top:8px; }
 .powered b { color:var(--gd); }
 </style>
-        <link rel="stylesheet" href="wc2026.css"/>
 </head>
 <body>
-        <!-- WC2026-START -->
-        <div class="wc-bar">
-            <span class="wc-bar-inner">
-                🇪🇬&nbsp; يلا يا فراعنة &nbsp;🏆&nbsp; FIFA World Cup 2026 &nbsp;
-                <span class="wc-bar-sep">|</span>
-                &nbsp; USA &bull; Canada &bull; Mexico &nbsp;
-                <span class="wc-bar-sep">|</span>
-                &nbsp; 🦅 مصر في كأس العالم &nbsp;🇪🇬&nbsp; يلا يا فراعنة &nbsp;🏆
-            </span>
-        </div>
-        <!-- WC2026-END -->
 <div class="toast" id="toast"></div>
 
 <!-- SPLASH -->
@@ -266,8 +254,9 @@ setTimeout(function(){
 function startClock(){ updateClock(); clockTimer=setInterval(updateClock,1000); }
 function updateClock(){
     var now=new Date();
-    var h=String(now.getHours()).padStart(2,"0");
-    var m=String(now.getMinutes()).padStart(2,"0");
+    var cairoTime=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    var h=cairoTime.split(":")[0];
+    var m=cairoTime.split(":")[1];
     var s=String(now.getSeconds()).padStart(2,"0");
     document.getElementById("clockDisp").textContent=h+":"+m+":"+s;
     updateTimingBadge(h+":"+m);
@@ -321,7 +310,7 @@ function register(action){
     var btn=action==="حضور"?document.getElementById("btnIn"):document.getElementById("btnOut");
     btn.disabled=true;
     var now=new Date();
-    var timeStr=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+    var timeStr=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit"});
     var start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd),cur=toMins(timeStr);
     var timing="";
     if(action==="حضور"){var late=cur-start;if(late>=1)timing="تأخير "+late+" دقيقة";}
