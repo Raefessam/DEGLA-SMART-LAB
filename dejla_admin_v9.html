@@ -2012,8 +2012,22 @@
                         });
                     });
 
+                    // الموظفين اللي عندهم بيانات ناقصة أو خصومات معلّقة يطلعوا فوق الجدول
+                    empResults.sort(function(a,b){
+                        var aFlag = (a.review>0||a.pending>0) ? 1 : 0;
+                        var bFlag = (b.review>0||b.pending>0) ? 1 : 0;
+                        return bFlag - aFlag;
+                    });
+
                     // ── بناء HTML ──
                     var h = "";
+
+                    // توضيح: تقرير متابعة (الشهر لسه شغال) ولا تقرير نهائي (الشهر خلص)
+                    if (isCurMonth3) {
+                        h += "<div class='rep-optimistic-note' style='background:#e3f2fd;border:1px solid #64b5f6;border-radius:10px;padding:8px;color:#1565c0;font-weight:700;margin-bottom:10px;'>&#128202; تقرير متابعة — حتى يوم " + endDay3 + " من " + dim + " (الشهر لسه مستمر، الأرقام مش نهائية)</div>";
+                    } else {
+                        h += "<div class='rep-optimistic-note' style='background:#e8f5e0;border:1px solid #a5d6a7;border-radius:10px;padding:8px;color:#2e7d32;font-weight:700;margin-bottom:10px;'>&#9989; التقرير الشهري النهائي — الشهر كامل</div>";
+                    }
 
                     // إحصائيات سريعة
                     var avgPresence = emps.length ? Math.round(totalPresenceDays/emps.length) : 0;
@@ -2049,11 +2063,11 @@
                         h += "<td style='color:" + rateColor + ";font-weight:800;'>" + e.presenceRate + "%</td>";
                         h += "<td>" + e.avgHours + "</td>";
                         h += "<td style='" + (e.lateCount>0?"color:var(--r);font-weight:800;":"") + "'>" + e.lateCount + "</td>";
-                        h += "<td class='td-deduct'>" + (e.deduct?"-"+e.deduct:"—") + "</td>";
-                        h += "<td class='td-ot'>" + (e.ot?"+"+e.ot:"—") + "</td>";
+                        h += "<td class='td-deduct'>" + (e.deduct?"-"+e.deduct+(e.review>0?"*":""):"—") + "</td>";
+                        h += "<td class='td-ot'>" + (e.ot?"+"+e.ot+(e.review>0?"*":""):"—") + "</td>";
                         h += "<td class='td-loan'>" + (e.loans?"-"+e.loans:"—") + "</td>";
                         h += "<td class='td-deduct'>" + (e.leaveD?"-"+e.leaveD:"—") + "</td>";
-                        h += "<td class='" + netClass + "'>" + e.net.toLocaleString() + "</td>";
+                        h += "<td class='" + netClass + "'>" + e.net.toLocaleString() + (e.review>0?"*":"") + "</td>";
                         h += "</tr>";
                     });
                     // صف الإجمالي
@@ -2066,6 +2080,9 @@
                     h += "<td class='td-net'>" + Math.round(totalNet).toLocaleString() + "</td>";
                     h += "</tr>";
                     h += "</tbody></table></div>";
+                    if (totalReview > 0) {
+                        h += "<div class='rep-optimistic-note' style='text-align:right;'>* الرقم ده تقديري — فيه يوم واحد أو أكتر بصمته ناقصة (يحتاج مراجعة)، هيتغيّر بعد ما تتراجع البصمة يدويًا</div>";
+                    }
 
                     // مقارنة الفروع
                     var branchStats = {};
