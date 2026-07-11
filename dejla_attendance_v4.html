@@ -337,13 +337,6 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 var APPS="https://script.google.com/macros/s/AKfycbyNL7y0wCQEcBkBXwEV9LKAgW1HyqZOw_nK3RNs7yBeFBcLxAUUcYYgSxI7NGOyo-DBZg/exec";
 var empData=null,clockTimer=null;
 
-// ✅ طلب إذن الإشعارات عند التحميل (للـ iOS و Android)
-window.addEventListener("load",function(){
-    requestNotificationPermission();
-    // تشغيل تلقائي عند التحميل (لاختبار الصوت)
-    console.log("🎵 نظام الصوت والإشعارات جاهز");
-});
-
 setTimeout(function(){
     var s=document.getElementById("splash");
     s.style.transition="opacity 0.5s"; s.style.opacity="0";
@@ -506,51 +499,53 @@ if("Notification" in window && Notification.permission==="default"){
 }
 
 function playSound(type){
-    // ✅ نظام صوتي احترافي هجين (iOS + Android)
-    
-    // 1. محاولة تشغيل الاهتزاز (يشتغل على الاثنين)
+    // ✅ صوت احترافي قوي + اهتزاز قوي
     try{
+        // اهتزاز قوي ومتعدد
         if(navigator.vibrate){
             if(type==="in"){
-                navigator.vibrate([150,100,150,100,200]);
+                navigator.vibrate([150,100,150,100,200]); // حضور = اهتزازات متعددة
             } else if(type==="out"){
-                navigator.vibrate([200,100,200,100,200]);
+                navigator.vibrate([200,100,200,100,200]); // انصراف = اهتزازات أقوى
             } else {
-                navigator.vibrate([100,50,100,50,100,50,150]);
+                navigator.vibrate([100,50,100,50,100,50,150]); // طلب = اهتزازات سريعة
             }
         }
     }catch(e){}
     
-    // 2. محاولة Web Audio API (Android أقوى فيها)
     try{
+        // صوت احترافي عالي الجودة
         var c=new(window.AudioContext||window.webkitAudioContext)();
         if(c.state==="suspended")c.resume();
         var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
         o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
         
         if(type==="in"){
+            // حضور = صوت صاعد قوي وواضح
             o.frequency.setValueAtTime(392,c.currentTime);
             o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
             o.frequency.linearRampToValueAtTime(659,c.currentTime+.4);
             g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);
+            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);  // ✅ صوت أقوى
             g.gain.setValueAtTime(0.4,c.currentTime+.35);
             g.gain.linearRampToValueAtTime(0,c.currentTime+.6);
             o.start(c.currentTime);
             o.stop(c.currentTime+.6);
         }
         else if(type==="out"){
+            // انصراف = صوت هابط قوي
             o.frequency.setValueAtTime(659,c.currentTime);
             o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
             o.frequency.linearRampToValueAtTime(392,c.currentTime+.4);
             g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);
+            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);  // ✅ أقوى من الحضور
             g.gain.setValueAtTime(0.45,c.currentTime+.35);
             g.gain.linearRampToValueAtTime(0,c.currentTime+.65);
             o.start(c.currentTime);
             o.stop(c.currentTime+.65);
         }
         else{
+            // طلب = صوت مزدوج سريع
             o.frequency.setValueAtTime(880,c.currentTime);
             o.frequency.linearRampToValueAtTime(440,c.currentTime+.15);
             g.gain.setValueAtTime(0,c.currentTime);
@@ -561,39 +556,7 @@ function playSound(type){
             o.stop(c.currentTime+.25);
         }
     }catch(e){}
-    
-    // 3. محاولة HTML Audio Element (iOS fallback - يشتغل حتى لو كان الموبايل صامت)
-    try{
-        setTimeout(function(){
-            if(type==="in"){
-                var aud=document.getElementById("audioIn");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            } else if(type==="out"){
-                var aud=document.getElementById("audioOut");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            } else {
-                var aud=document.getElementById("audioReq");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            }
-        },50);
-    }catch(e){}
-    
-    // 4. كـ fallback نهائي - استخدم Notification API (يشتغل على الاثنين)
-    try{
-        if("Notification" in window && Notification.permission==="granted"){
-            var msg=type==="in"?"تم تسجيل الدخول بنجاح!":type==="out"?"تم تسجيل الخروج بنجاح!":"تم إرسال الطلب بنجاح!";
-            new Notification("تأكيد التسجيل",{body:msg,tag:"registration-"+Date.now(),requireInteraction:false});
-        }
-    }catch(e){}
 }
-
-// طلب إذن الإشعارات عند التحميل
-function requestNotificationPermission(){
-    if("Notification" in window && Notification.permission==="default"){
-        Notification.requestPermission();
-    }
-}
-
 
 // ✅ نظام الـ Modal الاحترافي
 function showConfirmModal(action, empName, branch, shift, timeStr, confCode){
@@ -650,18 +613,8 @@ function logout(){
 
 var tt;
 function toast(msg){ clearTimeout(tt); var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); tt=setTimeout(function(){t.classList.remove("show");},3200); }
-</script><!-- ✅ Audio Elements for iOS/Android Compatibility -->
-<audio id="audioIn" preload="auto" style="display:none;">
-    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
-</audio>
-<audio id="audioOut" preload="auto" style="display:none;">
-    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
-</audio>
-<audio id="audioReq" preload="auto" style="display:none;">
-    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
-</audio>
-
-</body>
+</script><!-- ✅ Professional Confirmation Modal -->
+<div id="confirmModal">
     <div class="confirm-box">
         <div class="confirm-icon" id="confirmIcon">🟢</div>
         <div class="confirm-title" id="confirmTitle">تم التسجيل بنجاح!</div>
