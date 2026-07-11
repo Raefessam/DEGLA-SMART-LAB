@@ -820,87 +820,70 @@ if("Notification" in window && Notification.permission==="default"){
     Notification.requestPermission();
 }
 
-function playSound(type){
-    // ✅ نظام صوتي احترافي هجين (iOS + Android)
-    
-    // 1. محاولة تشغيل الاهتزاز (يشتغل على الاثنين)
-    try{
-        if(navigator.vibrate){
-            if(type==="in"){
-                navigator.vibrate([150,100,150,100,200]);
-            } else if(type==="out"){
-                navigator.vibrate([200,100,200,100,200]);
-            } else {
-                navigator.vibrate([100,50,100,50,100,50,150]);
-            }
-        }
-    }catch(e){}
-    
-    // 2. محاولة Web Audio API (Android أقوى فيها)
-    try{
-        var c=new(window.AudioContext||window.webkitAudioContext)();
-        if(c.state==="suspended")c.resume();
-        var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
-        o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
-        
-        if(type==="in"){
-            o.frequency.setValueAtTime(392,c.currentTime);
-            o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
-            o.frequency.linearRampToValueAtTime(659,c.currentTime+.4);
-            g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);
-            g.gain.setValueAtTime(0.4,c.currentTime+.35);
-            g.gain.linearRampToValueAtTime(0,c.currentTime+.6);
-            o.start(c.currentTime);
-            o.stop(c.currentTime+.6);
-        }
-        else if(type==="out"){
-            o.frequency.setValueAtTime(659,c.currentTime);
-            o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
-            o.frequency.linearRampToValueAtTime(392,c.currentTime+.4);
-            g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);
-            g.gain.setValueAtTime(0.45,c.currentTime+.35);
-            g.gain.linearRampToValueAtTime(0,c.currentTime+.65);
-            o.start(c.currentTime);
-            o.stop(c.currentTime+.65);
-        }
-        else{
-            o.frequency.setValueAtTime(880,c.currentTime);
-            o.frequency.linearRampToValueAtTime(440,c.currentTime+.15);
-            g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);
-            g.gain.setValueAtTime(0.4,c.currentTime+.1);
-            g.gain.linearRampToValueAtTime(0,c.currentTime+.25);
-            o.start(c.currentTime);
-            o.stop(c.currentTime+.25);
-        }
-    }catch(e){}
-    
-    // 3. محاولة HTML Audio Element (iOS fallback - يشتغل حتى لو كان الموبايل صامت)
-    try{
-        setTimeout(function(){
-            if(type==="in"){
-                var aud=document.getElementById("audioIn");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            } else if(type==="out"){
-                var aud=document.getElementById("audioOut");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            } else {
-                var aud=document.getElementById("audioReq");
-                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
-            }
-        },50);
-    }catch(e){}
-    
-    // 4. كـ fallback نهائي - استخدم Notification API (يشتغل على الاثنين)
-    try{
-        if("Notification" in window && Notification.permission==="granted"){
-            var msg=type==="in"?"تم تسجيل الدخول بنجاح!":type==="out"?"تم تسجيل الخروج بنجاح!":"تم إرسال الطلب بنجاح!";
-            new Notification("تأكيد التسجيل",{body:msg,tag:"registration-"+Date.now(),requireInteraction:false});
-        }
-    }catch(e){}
+// ✅ نظام الأصوات الاحترافي (Web Audio API + Vibration)
+var audioCtx = null;
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  }
+  return audioCtx;
 }
+
+function playTone(freq, duration, gain, callback) {
+  try {
+    var ctx = getAudioContext();
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(gain, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+    if (callback) setTimeout(callback, duration * 1000);
+  } catch (e) {}
+}
+
+function playCheckInMorning() {
+  navigator.vibrate && navigator.vibrate([150, 100, 150, 100, 200]);
+  playTone(523, 0.2, 0.3, function() {
+    playTone(659, 0.2, 0.3, function() {
+      playTone(784, 0.3, 0.3);
+    });
+  });
+}
+
+function playCheckInEvening() {
+  navigator.vibrate && navigator.vibrate([100, 100, 100]);
+  playTone(440, 0.4, 0.3);
+}
+
+function playCheckOut() {
+  navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 200]);
+  playTone(659, 0.25, 0.3, function() {
+    playTone(523, 0.3, 0.3);
+  });
+}
+
+function playSound(type) {
+  if (type === "in") {
+    var hour = new Date().getHours();
+    if (hour < 12) {
+      playCheckInMorning();
+    } else {
+      playCheckInEvening();
+    }
+  } else if (type === "out") {
+    playCheckOut();
+  } else {
+    playTone(880, 0.2, 0.3);
+  }
+}
+
 
 // طلب إذن الإشعارات عند التحميل
 function requestNotificationPermission(){
