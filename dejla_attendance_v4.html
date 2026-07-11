@@ -118,6 +118,84 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 .req-form { display:none; }
 .req-form.on { display:block; }
 
+/* ✅ CSS للسجل الشهري */
+.history-filters {
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    margin-bottom:16px;
+}
+.history-filters select {
+    width:100%; padding:10px 12px; border:2px solid var(--b3);
+    border-radius:10px; font-family:"Cairo",sans-serif;
+    font-size:.9rem; color:var(--t);
+    outline:none; background:#fafafa;
+}
+.history-filters select:focus { border-color:var(--g); background:white; }
+
+.history-summary {
+    background:linear-gradient(135deg,var(--gl),var(--gp));
+    border:2px solid var(--g); border-radius:12px;
+    padding:12px; margin-bottom:14px;
+    text-align:center; font-weight:700; color:var(--gd);
+    font-size:.9rem;
+}
+
+.attendance-table {
+    width:100%; border-collapse:collapse;
+    background:white; border-radius:10px;
+    overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06);
+    margin-bottom:14px; font-size:.85rem;
+}
+.attendance-table thead {
+    background:linear-gradient(135deg,#6abf1e,#4e9012);
+    color:white; font-weight:900; text-align:right;
+}
+.attendance-table th {
+    padding:10px 8px; border-bottom:2px solid var(--g);
+}
+.attendance-table td {
+    padding:10px 8px; border-bottom:1px solid var(--b3); text-align:right;
+}
+.attendance-table tr:last-child td { border-bottom:none; }
+.attendance-table tbody tr:hover { background:var(--gp); }
+
+.time-in { color:#4e9012; font-weight:700; }
+.time-out { color:#e53935; font-weight:700; }
+.hours-worked { 
+    background:var(--gl); color:var(--gd); 
+    padding:4px 8px; border-radius:6px; font-weight:700;
+}
+
+.requests-section {
+    background:white; border-radius:10px;
+    padding:12px; margin-bottom:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);
+}
+.requests-section h4 {
+    color:var(--gd); font-weight:900; margin-bottom:10px;
+    font-size:.95rem;
+}
+.request-item {
+    background:var(--gp); border-right:4px solid var(--g);
+    padding:10px; border-radius:6px; margin-bottom:8px;
+    font-size:.85rem;
+}
+.request-item:last-child { margin-bottom:0; }
+.request-type { color:var(--gd); font-weight:900; }
+.request-status {
+    display:inline-block; padding:2px 8px;
+    border-radius:4px; font-size:.75rem; font-weight:700;
+    margin-top:4px;
+}
+.status-pending { background:#fff3cd; color:#856404; }
+.status-approved { background:#d4edda; color:#155724; }
+.status-rejected { background:#f8d7da; color:#721c24; }
+
+.no-data {
+    text-align:center; color:var(--m); padding:20px;
+    font-size:.9rem;
+}
+
+
 .success-box { text-align:center; padding:20px; }
 .success-icon { font-size:3rem; margin-bottom:10px; }
 .success-title { font-size:1.1rem; font-weight:900; color:var(--gd); }
@@ -293,10 +371,14 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="req-tabs">
             <div class="rtab on" id="tab-salary" onclick="switchTab('salary')">💰 سلفة</div>
             <div class="rtab" id="tab-leave" onclick="switchTab('leave')">📝 إذن غياب</div>
+            <!-- ✅ Tab جديد: السجل الشهري -->
+            <div class="rtab" id="tab-history" onclick="switchTab('history')">📊 السجل الشهري</div>
         </div>
         <div class="req-form on" id="form-salary">
             <div class="fg"><label>المبلغ المطلوب (ج.م)</label><input type="number" id="salAmount" inputmode="numeric" placeholder="مثال: 500"/></div>
             <div class="fg"><label>سبب السلفة (اختياري)</label><input type="text" id="salReason" placeholder="سبب"/></div>
+            <!-- ✅ تاريخ استلام السلفة (جديد) -->
+            <div class="fg"><label>تاريخ الاستلام المتوقع</label><input type="date" id="salDate"/></div>
             <button class="btn bng" onclick="sendSalary()">إرسال طلب السلفة</button>
         </div>
         <div class="req-form" id="form-leave">
@@ -314,6 +396,41 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
             <div class="fg"><label>ملاحظة (اختياري)</label><input type="text" id="leaveNote" placeholder="أي تفاصيل إضافية"/></div>
             <button class="btn bng" onclick="sendLeave()">إرسال طلب الإذن</button>
         </div>
+        
+        <!-- ✅ Form جديد: السجل الشهري (History) -->
+        <div class="req-form" id="form-history">
+            <div class="card">
+                <h3 style="text-align:center;color:var(--gd);font-weight:900;margin-bottom:14px;">📊 السجل الشهري</h3>
+                
+                <!-- الفلاتر -->
+                <div class="history-filters">
+                    <div>
+                        <label style="display:block;font-size:.7rem;font-weight:700;color:var(--m);margin-bottom:4px;">الشهر والسنة</label>
+                        <input type="month" id="historyMonth" onchange="loadHistoryData()" style="width:100%;padding:10px 12px;border:2px solid var(--b3);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;outline:none;background:#fafafa;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:.7rem;font-weight:700;color:var(--m);margin-bottom:4px;">التصفية</label>
+                        <select id="historyFilter" onchange="loadHistoryData()" style="width:100%;padding:10px 12px;border:2px solid var(--b3);border-radius:10px;font-family:Cairo,sans-serif;font-size:.9rem;outline:none;background:#fafafa;">
+                            <option value="all">الكل</option>
+                            <option value="checkin">التي فيها حضور</option>
+                            <option value="checkout">التي فيها انصراف</option>
+                            <option value="requests">التي فيها طلبات</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- الملخص -->
+                <div class="history-summary" id="historySummary">
+                    اختر الشهر لعرض البيانات
+                </div>
+                
+                <!-- الجدول -->
+                <div id="historyContainer">
+                    <div class="no-data">📅 اختر شهر لعرض السجل</div>
+                </div>
+            </div>
+        </div>
+        
         <button class="btn bno" onclick="goAtt()">🔙 رجوع للحضور</button>
     </div>
 </div>
@@ -336,6 +453,13 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 <script>
 var APPS="https://script.google.com/macros/s/AKfycbyNL7y0wCQEcBkBXwEV9LKAgW1HyqZOw_nK3RNs7yBeFBcLxAUUcYYgSxI7NGOyo-DBZg/exec";
 var empData=null,clockTimer=null;
+
+// ✅ طلب إذن الإشعارات عند التحميل (للـ iOS و Android)
+window.addEventListener("load",function(){
+    requestNotificationPermission();
+    // تشغيل تلقائي عند التحميل (لاختبار الصوت)
+    console.log("🎵 نظام الصوت والإشعارات جاهز");
+});
 
 setTimeout(function(){
     var s=document.getElementById("splash");
@@ -437,24 +561,130 @@ function register(action){
 }
 
 function switchTab(t){
-    ["salary","leave"].forEach(function(x){
+    ["salary","leave","history"].forEach(function(x){
         document.getElementById("tab-"+x).classList.toggle("on",x===t);
         document.getElementById("form-"+x).classList.toggle("on",x===t);
     });
+    // ✅ لما يفتح tab السجل، تحميل البيانات
+    if(t==="history"){
+        var today=new Date();
+        var year=today.getFullYear();
+        var month=String(today.getMonth()+1).padStart(2,"0");
+        document.getElementById("historyMonth").value=year+"-"+month;
+        loadHistoryData();
+    }
+}
+
+// ✅ تحميل السجل الشهري من الـ Backend
+function loadHistoryData(){
+    if(!empData)return;
+    var monthVal=document.getElementById("historyMonth").value;
+    if(!monthVal){toast("⚠️ اختر الشهر");return;}
+    
+    var summaryEl=document.getElementById("historySummary");
+    var containerEl=document.getElementById("historyContainer");
+    
+    summaryEl.innerHTML='<span class="sp"></span> جاري التحميل...';
+    containerEl.innerHTML='';
+    
+    fetch(APPS+"?action=getEmployeeHistory&code="+encodeURIComponent(empData.code)+"&yearMonth="+encodeURIComponent(monthVal))
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if(!d.success){toast("❌ خطأ في التحميل");return;}
+        renderHistoryTable(d.data, monthVal);
+    })
+    .catch(function(){
+        toast("❌ تعذر تحميل البيانات");
+        summaryEl.innerHTML='خطأ في التحميل';
+    });
+}
+
+// ✅ رسم جدول السجل
+function renderHistoryTable(data, monthVal){
+    if(!data || !data.attendance || data.attendance.length===0){
+        document.getElementById("historySummary").innerHTML='📭 لا توجد بيانات للشهر المختار';
+        document.getElementById("historyContainer").innerHTML='<div class="no-data">📅 لا توجد سجلات لهذا الشهر</div>';
+        return;
+    }
+    
+    var filter=document.getElementById("historyFilter").value;
+    var attendance=data.attendance;
+    var requests=data.requests||[];
+    
+    // فلترة البيانات
+    if(filter==="checkin"){
+        attendance=attendance.filter(function(a){return a.checkIn;});
+    } else if(filter==="checkout"){
+        attendance=attendance.filter(function(a){return a.checkOut;});
+    } else if(filter==="requests"){
+        attendance=attendance.filter(function(a){return requests.some(function(r){return r.date===a.date;});});
+    }
+    
+    // حساب الإحصائيات
+    var totalHours=0;
+    attendance.forEach(function(a){
+        if(a.hoursWorked)totalHours+=a.hoursWorked;
+    });
+    
+    var summary='📅 الشهر: '+monthVal;
+    summary+=' | 📊 الأيام: '+attendance.length;
+    summary+=' | ⏱️ الساعات الكلية: '+totalHours.toFixed(2)+' ساعة';
+    document.getElementById("historySummary").innerHTML=summary;
+    
+    // رسم الجدول
+    var html='<table class="attendance-table">';
+    html+='<thead><tr><th>التاريخ</th><th>الدخول</th><th>الخروج</th><th>ساعات العمل</th><th>ملاحظات</th></tr></thead>';
+    html+='<tbody>';
+    
+    attendance.forEach(function(a){
+        var date=a.date||'—';
+        var checkin=a.checkIn?'<span class="time-in">✅ '+a.checkIn+'</span>':'<span class="time-in">—</span>';
+        var checkout=a.checkOut?'<span class="time-out">🔴 '+a.checkOut+'</span>':'<span class="time-out">—</span>';
+        var hours=a.hoursWorked?'<span class="hours-worked">'+a.hoursWorked.toFixed(2)+' ساعة</span>':'—';
+        var notes=a.notes||'—';
+        
+        html+='<tr><td>'+date+'</td><td>'+checkin+'</td><td>'+checkout+'</td><td>'+hours+'</td><td>'+notes+'</td></tr>';
+    });
+    
+    html+='</tbody></table>';
+    
+    // إضافة الطلبات
+    if(requests && requests.length>0){
+        html+='<div class="requests-section">';
+        html+='<h4>📋 الطلبات</h4>';
+        requests.forEach(function(r){
+            var type=r.type==="salary"?"💰 سلفة":"📝 إذن";
+            var status=r.status==="pending"?"معلق":r.status==="approved"?"موافق":"مرفوض";
+            var statusClass="status-"+r.status;
+            html+='<div class="request-item">';
+            html+='<span class="request-type">'+type+'</span> - '+r.date+'<br>';
+            html+='<small>'+r.reason+'</small>';
+            html+='<div class="request-status '+statusClass+'">'+status+'</div>';
+            html+='</div>';
+        });
+        html+='</div>';
+    }
+    
+    document.getElementById("historyContainer").innerHTML=html;
 }
 function sendSalary(){
     var amt=document.getElementById("salAmount").value;
-    if(!amt){toast("⚠️ أدخل المبلغ");return;}
-    // ✅ تحسين 3: تأكيد قبل إرسال الطلب
-    if(!confirm("هل تؤكد طلب سلفة بمبلغ "+amt+" ج.م؟")){return;}
+    var salDate=document.getElementById("salDate").value;
     
-    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value})})
+    if(!amt){toast("⚠️ أدخل المبلغ");return;}
+    if(!salDate){toast("⚠️ اختر تاريخ الاستلام");return;}
+    
+    // ✅ تحسين: تأكيد احترافي يتضمن كل البيانات
+    if(!confirm("هل تؤكد طلب سلفة:\n\nالمبلغ: "+amt+" ج.م\nتاريخ الاستلام: "+salDate)){return;}
+    
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value,salaryDate:salDate})})
     .then(function(){
         playSound("req");  // صوت + اهتزاز
         toast("✅ تم إرسال طلب السلفة!");
-        showNotification("✅ تم إرسال طلب السلفة", "المبلغ: "+amt+" ج.م", "req");
+        showNotification("✅ تم إرسال طلب السلفة", "المبلغ: "+amt+" ج.م — التاريخ: "+salDate, "req");
         document.getElementById("salAmount").value="";
         document.getElementById("salReason").value="";
+        document.getElementById("salDate").value="";
     })
     .catch(function(){toast("❌ تعذر الإرسال");});
 }
@@ -499,53 +729,51 @@ if("Notification" in window && Notification.permission==="default"){
 }
 
 function playSound(type){
-    // ✅ صوت احترافي قوي + اهتزاز قوي
+    // ✅ نظام صوتي احترافي هجين (iOS + Android)
+    
+    // 1. محاولة تشغيل الاهتزاز (يشتغل على الاثنين)
     try{
-        // اهتزاز قوي ومتعدد
         if(navigator.vibrate){
             if(type==="in"){
-                navigator.vibrate([150,100,150,100,200]); // حضور = اهتزازات متعددة
+                navigator.vibrate([150,100,150,100,200]);
             } else if(type==="out"){
-                navigator.vibrate([200,100,200,100,200]); // انصراف = اهتزازات أقوى
+                navigator.vibrate([200,100,200,100,200]);
             } else {
-                navigator.vibrate([100,50,100,50,100,50,150]); // طلب = اهتزازات سريعة
+                navigator.vibrate([100,50,100,50,100,50,150]);
             }
         }
     }catch(e){}
     
+    // 2. محاولة Web Audio API (Android أقوى فيها)
     try{
-        // صوت احترافي عالي الجودة
         var c=new(window.AudioContext||window.webkitAudioContext)();
         if(c.state==="suspended")c.resume();
         var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
         o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
         
         if(type==="in"){
-            // حضور = صوت صاعد قوي وواضح
             o.frequency.setValueAtTime(392,c.currentTime);
             o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
             o.frequency.linearRampToValueAtTime(659,c.currentTime+.4);
             g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);  // ✅ صوت أقوى
+            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);
             g.gain.setValueAtTime(0.4,c.currentTime+.35);
             g.gain.linearRampToValueAtTime(0,c.currentTime+.6);
             o.start(c.currentTime);
             o.stop(c.currentTime+.6);
         }
         else if(type==="out"){
-            // انصراف = صوت هابط قوي
             o.frequency.setValueAtTime(659,c.currentTime);
             o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
             o.frequency.linearRampToValueAtTime(392,c.currentTime+.4);
             g.gain.setValueAtTime(0,c.currentTime);
-            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);  // ✅ أقوى من الحضور
+            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);
             g.gain.setValueAtTime(0.45,c.currentTime+.35);
             g.gain.linearRampToValueAtTime(0,c.currentTime+.65);
             o.start(c.currentTime);
             o.stop(c.currentTime+.65);
         }
         else{
-            // طلب = صوت مزدوج سريع
             o.frequency.setValueAtTime(880,c.currentTime);
             o.frequency.linearRampToValueAtTime(440,c.currentTime+.15);
             g.gain.setValueAtTime(0,c.currentTime);
@@ -556,7 +784,39 @@ function playSound(type){
             o.stop(c.currentTime+.25);
         }
     }catch(e){}
+    
+    // 3. محاولة HTML Audio Element (iOS fallback - يشتغل حتى لو كان الموبايل صامت)
+    try{
+        setTimeout(function(){
+            if(type==="in"){
+                var aud=document.getElementById("audioIn");
+                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
+            } else if(type==="out"){
+                var aud=document.getElementById("audioOut");
+                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
+            } else {
+                var aud=document.getElementById("audioReq");
+                if(aud){aud.currentTime=0;aud.play().catch(function(){});}
+            }
+        },50);
+    }catch(e){}
+    
+    // 4. كـ fallback نهائي - استخدم Notification API (يشتغل على الاثنين)
+    try{
+        if("Notification" in window && Notification.permission==="granted"){
+            var msg=type==="in"?"تم تسجيل الدخول بنجاح!":type==="out"?"تم تسجيل الخروج بنجاح!":"تم إرسال الطلب بنجاح!";
+            new Notification("تأكيد التسجيل",{body:msg,tag:"registration-"+Date.now(),requireInteraction:false});
+        }
+    }catch(e){}
 }
+
+// طلب إذن الإشعارات عند التحميل
+function requestNotificationPermission(){
+    if("Notification" in window && Notification.permission==="default"){
+        Notification.requestPermission();
+    }
+}
+
 
 // ✅ نظام الـ Modal الاحترافي
 function showConfirmModal(action, empName, branch, shift, timeStr, confCode){
@@ -613,7 +873,18 @@ function logout(){
 
 var tt;
 function toast(msg){ clearTimeout(tt); var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); tt=setTimeout(function(){t.classList.remove("show");},3200); }
-</script><!-- ✅ Professional Confirmation Modal -->
+</script><!-- ✅ Audio Elements for iOS/Android Compatibility -->
+<audio id="audioIn" preload="auto" style="display:none;">
+    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
+</audio>
+<audio id="audioOut" preload="auto" style="display:none;">
+    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
+</audio>
+<audio id="audioReq" preload="auto" style="display:none;">
+    <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAAB9AAACABAAZGF0YQIAAAAAAA==" type="audio/wav">
+</audio>
+
+<!-- ✅ Professional Confirmation Modal -->
 <div id="confirmModal">
     <div class="confirm-box">
         <div class="confirm-icon" id="confirmIcon">🟢</div>
