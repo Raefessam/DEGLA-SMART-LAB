@@ -2939,6 +2939,52 @@
                 t.classList.add("show");
                 toastTimer = setTimeout(function() { t.classList.remove("show"); }, 4000);
             }
-        </script>
+        
+// ✅ نظام الإشعارات للإدارة
+function requestAdminNotificationPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+function showAdminNotification(title, message) {
+  if ("Notification" in window && Notification.permission === "granted") {
+    var icon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234CAF50'/><text x='50' y='55' font-size='40' fill='white' text-anchor='middle' font-weight='bold'>!</text></svg>";
+    var n = new Notification(title, {
+      body: message,
+      icon: icon,
+      tag: "admin-" + Date.now(),
+      requireInteraction: false
+    });
+    n.onclick = function() { window.focus(); n.close(); };
+    playAdminSound();
+  }
+}
+
+function playAdminSound() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === "suspended") ctx.resume();
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.connect(g);
+    g.connect(ctx.destination);
+    
+    osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {}
+}
+
+// تفعيل الإشعارات عند تحميل الصفحة
+window.addEventListener("load", function() {
+  requestAdminNotificationPermission();
+});
+
+
+</script>
     </body>
 </html>
