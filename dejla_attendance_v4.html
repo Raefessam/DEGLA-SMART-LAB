@@ -540,34 +540,35 @@ function checkLastAttendance(action){
     .then(function(r){return r.json();})
     .then(function(d){
         if(!d.success || !d.data){
+            // لا توجد تسجيلات سابقة
+            if(action==="انصراف"){
+                toast("⚠️ لا يمكن الانصراف قبل تسجيل الحضور أولاً");
+                return;
+            }
             proceedWithRegistration(action, branch, shift);
             return;
         }
         
         var last=d.data;
-        
         if(action==="حضور" && last.action==="حضور"){
-            toast("⚠️ لقد سجلت حضورك بالفعل في "+last.time+"\nيجب عليك الانصراف من "+last.branch+" أولاً");
+            toast("⚠️ لقد سجلت حضورك بالفعل في "+last.time+"\nيجب عليك الانصراف أولاً");
             return;
         }
-        
         if(action==="انصراف" && last.action==="انصراف"){
             toast("⚠️ لقد سجلت انصرافك بالفعل في "+last.time);
             return;
         }
-        
         if(action==="انصراف" && last.action!=="حضور"){
             toast("⚠️ لا يمكن الانصراف قبل تسجيل الحضور");
             return;
         }
-        
-        if(last.action==="انصراف"){
-            proceedWithRegistration(action, branch, shift);
-        } else if(action==="انصراف" && last.action==="حضور"){
-            proceedWithRegistration(action, branch, shift);
-        }
+        proceedWithRegistration(action, branch, shift);
     })
     .catch(function(){
+        if(action==="انصراف"){
+            toast("⚠️ تعذر التحقق - تأكد من الاتصال");
+            return;
+        }
         proceedWithRegistration(action, branch, shift);
     });
 }
