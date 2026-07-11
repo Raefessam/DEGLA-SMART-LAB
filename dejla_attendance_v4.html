@@ -324,21 +324,6 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="stitle">🔐 تحقق من هويتك</div>
         <div class="fg"><label>الاسم الثلاثي بالعربي</label><input type="text" id="empName" placeholder="أحمد محمد علي" inputmode="text" autocomplete="off"/></div>
         <div class="fg"><label>كود الموظف</label><input type="text" id="empCode" placeholder="E001" inputmode="text" autocomplete="off" style="text-transform:uppercase;"/></div>
-        <div class="fg"><label>الفرع</label>
-            <select id="empBranch">
-                <option value="">اختر الفرع</option>
-                <option value="فرع كورنيش طرة">فرع كورنيش طرة</option>
-                <option value="فرع زهراء المعادي">فرع زهراء المعادي</option>
-                <option value="فرع كوتسيكا">فرع كوتسيكا</option>
-            </select>
-        </div>
-        <div class="fg"><label>الشيفت</label>
-            <select id="empShift">
-                <option value="">اختر الشيفت</option>
-                <option value="شيفت 1">شيفت 1</option>
-                <option value="شيفت 2">شيفت 2</option>
-            </select>
-        </div>
         <button class="btn bng" id="verifyBtn" onclick="verifyEmp()">تحقق من الهوية</button>
     </div>
 </div>
@@ -355,6 +340,22 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
         <div class="clock" id="clockDisp">00:00:00</div>
         <div class="clock-sub" id="shiftDisp"></div>
         <div id="timingBadge"></div>
+        <!-- ✅ الفرع والشيفت -->
+        <div class="fg"><label>الفرع</label>
+            <select id="empBranch">
+                <option value="">اختر الفرع</option>
+                <option value="فرع كورنيش طرة">فرع كورنيش طرة</option>
+                <option value="فرع زهراء المعادي">فرع زهراء المعادي</option>
+                <option value="فرع كوتسيكا">فرع كوتسيكا</option>
+            </select>
+        </div>
+        <div class="fg"><label>الشيفت</label>
+            <select id="empShift">
+                <option value="">اختر الشيفت</option>
+                <option value="شيفت 1">شيفت 1</option>
+                <option value="شيفت 2">شيفت 2</option>
+            </select>
+        </div>
         <div class="att-btns">
             <button class="att-in" id="btnIn" onclick="register('حضور')">🟢 تسجيل حضور</button>
             <button class="att-out" id="btnOut" onclick="register('انصراف')">🔴 تسجيل انصراف</button>
@@ -462,27 +463,18 @@ function toMins(t){ if(!t)return 0; var p=t.split(":"); return parseInt(p[0]||0)
 function verifyEmp(){
     var name=document.getElementById("empName").value.trim();
     var code=document.getElementById("empCode").value.trim().toUpperCase();
-    var branch=document.getElementById("empBranch").value;
-    var shift=document.getElementById("empShift").value;
     if(!name||name.split(" ").filter(Boolean).length<3){toast("⚠️ أدخل الاسم الثلاثي كاملاً");return;}
     if(!code){toast("⚠️ أدخل كود الموظف");return;}
-    if(!branch){toast("⚠️ اختر الفرع");return;}
-    if(!shift){toast("⚠️ اختر الشيفت");return;}
     var btn=document.getElementById("verifyBtn");
     btn.disabled=true; btn.innerHTML='<span class="sp"></span>جاري التحقق...';
     fetch(APPS+"?action=verifyEmployee&name="+encodeURIComponent(name)+"&code="+encodeURIComponent(code))
     .then(function(r){return r.json();}).then(function(d){
         btn.disabled=false; btn.textContent="تحقق من الهوية";
         if(!d.valid){toast("❌ بيانات غير صحيحة أو الموظف غير نشط");return;}
-        var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:30"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
-        var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
-        empData=d; empData.selectedBranch=branch; empData.selectedShift=shift;
-        empData.shiftStart=times.s; empData.shiftEnd=times.e;
+        empData=d;
         document.getElementById("empAvatar").textContent=d.name.trim().charAt(0);
         document.getElementById("empNameDisp").textContent=d.name;
-        document.getElementById("empBranchDisp").textContent=branch+" • "+shift;
         document.getElementById("empCodeDisp").textContent=d.code;
-        document.getElementById("shiftDisp").textContent="الشيفت: "+times.s+" — "+times.e;
         showStep("step2"); startClock();
     }).catch(function(){btn.disabled=false;btn.textContent="تحقق من الهوية";toast("❌ تعذر الاتصال");});
 }
@@ -496,70 +488,70 @@ function register(action){
 
 // ✅ فحص التسجيلات المكررة
 function checkLastAttendance(action){
+    var branch=document.getElementById("empBranch").value;
+    var shift=document.getElementById("empShift").value;
+    if(!branch){toast("⚠️ اختر الفرع");return;}
+    if(!shift){toast("⚠️ اختر الشيفت");return;}
+    
     fetch(APPS+"?action=getLastAttendance&code="+encodeURIComponent(empData.code))
     .then(function(r){return r.json();})
     .then(function(d){
         if(!d.success || !d.data){
-            // لا توجد تسجيلات سابقة = اسمح بالتسجيل
-            proceedWithRegistration(action);
+            proceedWithRegistration(action, branch, shift);
             return;
         }
         
         var last=d.data;
         
-        // منطق المنع:
         if(action==="حضور" && last.action==="حضور"){
-            // تسجيل حضور بدون انصراف = منع التكرار
             toast("⚠️ لقد سجلت حضورك بالفعل في "+last.time+"\nيجب عليك الانصراف من "+last.branch+" أولاً");
             return;
         }
         
         if(action==="انصراف" && last.action==="انصراف"){
-            // تسجيل انصراف بدون حضور = غريب لكن منع
             toast("⚠️ لقد سجلت انصرافك بالفعل في "+last.time);
             return;
         }
         
         if(action==="انصراف" && last.action!=="حضور"){
-            // محاولة انصراف بدون حضور
             toast("⚠️ لا يمكن الانصراف قبل تسجيل الحضور");
             return;
         }
         
-        // كل شيء تمام = اسمح بالتسجيل
         if(last.action==="انصراف"){
-            // حضور جديد بعد انصراف سابق = تمام
-            proceedWithRegistration(action);
+            proceedWithRegistration(action, branch, shift);
         } else if(action==="انصراف" && last.action==="حضور"){
-            // انصراف بعد حضور = تمام
-            proceedWithRegistration(action);
+            proceedWithRegistration(action, branch, shift);
         }
     })
     .catch(function(){
-        // خطأ في الفحص = اسمح بالتسجيل
-        proceedWithRegistration(action);
+        proceedWithRegistration(action, branch, shift);
     });
 }
 
 // تسجيل بعد التحقق
-function proceedWithRegistration(action){
+function proceedWithRegistration(action, branch, shift){
     if(!confirm("هل تؤكد تسجيل "+action+"؟")){return;}
     
     var btn=action==="حضور"?document.getElementById("btnIn"):document.getElementById("btnOut");
     btn.disabled=true;
     var now=new Date();
     var timeStr=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit"});
-    var start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd),cur=toMins(timeStr);
+    
+    var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
+    var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
+    
+    var start=toMins(times.s),end=toMins(times.e),cur=toMins(timeStr);
     var timing="";
     if(action==="حضور"){var late=cur-start;if(late>=1)timing="تأخير "+late+" دقيقة";}
     else{var ot=cur-end-15;if(ot>0)timing="أوفر تايم "+Math.round(ot)+" دقيقة";}
     
-    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:empData.selectedBranch,shift:empData.selectedShift,recordAction:action,timing:timing})})
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:branch,shift:shift,recordAction:action,timing:timing})})
     .then(function(){
         btn.disabled=false;
         playSound(action==="حضور"?"in":"out");
         var confCode=empData.code+"-"+new Date().getTime().toString().slice(-6);
-        showConfirmModal(action, empData.name, empData.selectedBranch, empData.selectedShift, timeStr, confCode);
+        showConfirmModal(action, empData.name, branch, shift, timeStr, confCode);
         showNotification("تم التسجيل", empData.name+" — "+timeStr, action==="حضور"?"in":"out");
         setTimeout(closeConfirmModal, 10000);
     })
