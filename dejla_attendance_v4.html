@@ -6,6 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <title>Degla Smart Lab - حضور</title>
+<!-- ✅ Icon Link (نفس الـ icon بتاع Admin) -->
+<link rel="icon" href="https://raw.githubusercontent.com/raefessam/DEGLA-SMART-LAB/main/icon-32.png" type="image/png">
+<link rel="shortcut icon" href="https://raw.githubusercontent.com/raefessam/DEGLA-SMART-LAB/main/icon-32.png" type="image/png">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet"/>
 <style>
 
@@ -122,6 +125,93 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 
 .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(120px); background:#2a3020; color:white; border-radius:14px; padding:12px 20px; font-size:.85rem; font-weight:700; transition:transform .35s cubic-bezier(.34,1.56,.64,1); z-index:999; white-space:nowrap; }
 .toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ✅ Professional Confirmation Modal */
+#confirmModal {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,.7); z-index:9999;
+    align-items:center; justify-content:center;
+}
+#confirmModal.show { display:flex; }
+.confirm-box {
+    background:white; border-radius:24px; padding:40px 30px;
+    text-align:center; max-width:90vw; width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    animation:slideUp .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp { from { transform:translateY(100px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+.confirm-icon {
+    font-size:4rem; margin-bottom:16px;
+    animation:bounce .6s ease-in-out;
+}
+@keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+
+.confirm-title { 
+    font-size:1.4rem; font-weight:900; color:var(--t);
+    margin-bottom:8px;
+}
+.confirm-sub {
+    font-size:.95rem; color:var(--m); margin-bottom:20px;
+    line-height:1.6;
+}
+.confirm-details {
+    background:var(--bg); border-radius:14px; padding:16px;
+    margin-bottom:20px; text-align:right;
+    font-size:.85rem; color:var(--t);
+}
+.confirm-detail-row {
+    display:flex; justify-content:space-between; margin-bottom:8px;
+}
+.confirm-detail-row:last-child { margin-bottom:0; }
+.confirm-label { color:var(--m); font-weight:700; }
+.confirm-value { font-weight:900; color:var(--gd); }
+
+.confirm-code {
+    background:var(--gl); border:2px dashed var(--gd);
+    border-radius:12px; padding:12px;
+    font-size:1.2rem; font-weight:900; color:var(--gd);
+    margin-bottom:20px; letter-spacing:2px;
+    font-family:monospace;
+}
+
+.confirm-timer {
+    font-size:.8rem; color:var(--m); margin-bottom:16px;
+    font-weight:700;
+}
+.timer-bar {
+    height:3px; background:var(--b3); border-radius:2px;
+    overflow:hidden; margin-top:6px;
+}
+.timer-fill {
+    height:100%; background:var(--g);
+    animation:timerCount 10s linear forwards;
+}
+@keyframes timerCount { from { width:100%; } to { width:0%; } }
+
+.confirm-buttons {
+    display:grid; grid-template-columns:1fr;
+    gap:10px;
+}
+.confirm-btn {
+    padding:16px; border:none; border-radius:12px;
+    font-family:"Cairo",sans-serif; font-size:1rem; font-weight:900;
+    cursor:pointer; transition:all .2s;
+}
+.confirm-btn-primary {
+    background:linear-gradient(135deg,#6abf1e,#4e9012);
+    color:white; box-shadow:0 6px 20px rgba(78,144,18,.3);
+}
+.confirm-btn-primary:active { transform:scale(.96); }
+.confirm-btn-success {
+    background:linear-gradient(135deg,#2e7d32,#1b5e20);
+    color:white; box-shadow:0 6px 20px rgba(46,125,50,.3);
+}
+.confirm-btn-danger {
+    background:linear-gradient(135deg,#e53935,#c62828);
+    color:white; box-shadow:0 6px 20px rgba(229,57,53,.3);
+}
+
 
 .ld-wrap { display:flex; justify-content:center; align-items:center; gap:8px; padding:20px; }
 .ld { width:10px; height:10px; border-radius:50%; background:var(--g); animation:ldp 1s ease-in-out infinite; }
@@ -320,15 +410,29 @@ function register(action){
     var timing="";
     if(action==="حضور"){var late=cur-start;if(late>=1)timing="تأخير "+late+" دقيقة";}
     else{var ot=cur-end-15;if(ot>0)timing="أوفر تايم "+Math.round(ot)+" دقيقة";}
+    
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:empData.selectedBranch,shift:empData.selectedShift,recordAction:action,timing:timing})})
     .then(function(){
         btn.disabled=false;
-        document.getElementById("succIcon").textContent=action==="حضور"?"🟢":"🔴";
-        document.getElementById("succTitle").textContent="تم تسجيل "+action+" بنجاح!";
-        document.getElementById("succSub").textContent=empData.name+" — "+timeStr+(timing?" — "+timing:"");
-        playSound(action==="حضور"?"in":"out");
+        
+        // ✅ تفعيل الإشعارات الاحترافية
+        playSound(action==="حضور"?"in":"out");  // صوت قوي + اهتزاز
+        
+        // توليد رقم تأكيد
+        var confCode=empData.code+"-"+new Date().getTime().toString().slice(-6);
+        
+        // عرض الـ Modal الاحترافي
+        showConfirmModal(
+            action,
+            empData.name,
+            empData.selectedBranch,
+            empData.selectedShift,
+            timeStr,
+            confCode
+        );
+        
+        // إضافة toast كإشعار إضافي
         showNotification("تم التسجيل", empData.name+" — "+timeStr, action==="حضور"?"in":"out");
-        showStep("step4");
     }).catch(function(){btn.disabled=false;toast("❌ تعذر التسجيل");});
 }
 
@@ -346,9 +450,9 @@ function sendSalary(){
     
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value})})
     .then(function(){
-        playSound("req");
+        playSound("req");  // صوت + اهتزاز
         toast("✅ تم إرسال طلب السلفة!");
-        showNotification("تم إرسال الطلب", "طلب سلفة بمبلغ "+amt+" ج.م", "req");
+        showNotification("✅ تم إرسال طلب السلفة", "المبلغ: "+amt+" ج.م", "req");
         document.getElementById("salAmount").value="";
         document.getElementById("salReason").value="";
     })
@@ -367,9 +471,9 @@ function sendLeave(){
     
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"leave",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,leaveReason:reason,leaveDuration:duration,leaveDate:leaveDate,leaveNote:document.getElementById("leaveNote").value})})
     .then(function(){
-        playSound("req");
+        playSound("req");  // صوت + اهتزاز
         toast("✅ تم إرسال طلب الإذن!");
-        showNotification("تم إرسال طلب الإذن", "تاريخ: "+leaveDate+" - "+duration, "req");
+        showNotification("✅ تم إرسال طلب الإذن", "التاريخ: "+leaveDate+" — المدة: "+duration, "req");
         document.getElementById("leaveReason").value="";
         document.getElementById("leaveDate").value="";
         document.getElementById("leaveNote").value="";
@@ -395,18 +499,105 @@ if("Notification" in window && Notification.permission==="default"){
 }
 
 function playSound(type){
-    // ✅ تحسين الإشعارات الصوتية
-    try{if(navigator.vibrate)navigator.vibrate(type==="in"?[80,40,80]:type==="req"?[60,30,60,30,60]:[120]);}catch(e){}
+    // ✅ صوت احترافي قوي + اهتزاز قوي
     try{
+        // اهتزاز قوي ومتعدد
+        if(navigator.vibrate){
+            if(type==="in"){
+                navigator.vibrate([150,100,150,100,200]); // حضور = اهتزازات متعددة
+            } else if(type==="out"){
+                navigator.vibrate([200,100,200,100,200]); // انصراف = اهتزازات أقوى
+            } else {
+                navigator.vibrate([100,50,100,50,100,50,150]); // طلب = اهتزازات سريعة
+            }
+        }
+    }catch(e){}
+    
+    try{
+        // صوت احترافي عالي الجودة
         var c=new(window.AudioContext||window.webkitAudioContext)();
         if(c.state==="suspended")c.resume();
         var o=c.createOscillator(),g=c.createGain(),comp=c.createDynamicsCompressor();
         o.connect(g);g.connect(comp);comp.connect(c.destination);o.type="sine";
-        if(type==="in"){o.frequency.setValueAtTime(392,c.currentTime);o.frequency.linearRampToValueAtTime(523,c.currentTime+.15);o.frequency.linearRampToValueAtTime(659,c.currentTime+.3);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.25,c.currentTime+.05);g.gain.setValueAtTime(0.25,c.currentTime+.25);g.gain.linearRampToValueAtTime(0,c.currentTime+.5);o.start(c.currentTime);o.stop(c.currentTime+.5);}
-        else if(type==="req"){o.frequency.setValueAtTime(660,c.currentTime);o.frequency.linearRampToValueAtTime(880,c.currentTime+.12);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.04);g.gain.setValueAtTime(0.2,c.currentTime+.18);g.gain.linearRampToValueAtTime(0,c.currentTime+.35);o.start(c.currentTime);o.stop(c.currentTime+.35);}
-        else{o.frequency.setValueAtTime(523,c.currentTime);o.frequency.linearRampToValueAtTime(392,c.currentTime+.2);o.frequency.linearRampToValueAtTime(330,c.currentTime+.4);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.05);g.gain.setValueAtTime(0.2,c.currentTime+.3);g.gain.linearRampToValueAtTime(0,c.currentTime+.55);o.start(c.currentTime);o.stop(c.currentTime+.55);}
+        
+        if(type==="in"){
+            // حضور = صوت صاعد قوي وواضح
+            o.frequency.setValueAtTime(392,c.currentTime);
+            o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
+            o.frequency.linearRampToValueAtTime(659,c.currentTime+.4);
+            g.gain.setValueAtTime(0,c.currentTime);
+            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);  // ✅ صوت أقوى
+            g.gain.setValueAtTime(0.4,c.currentTime+.35);
+            g.gain.linearRampToValueAtTime(0,c.currentTime+.6);
+            o.start(c.currentTime);
+            o.stop(c.currentTime+.6);
+        }
+        else if(type==="out"){
+            // انصراف = صوت هابط قوي
+            o.frequency.setValueAtTime(659,c.currentTime);
+            o.frequency.linearRampToValueAtTime(523,c.currentTime+.2);
+            o.frequency.linearRampToValueAtTime(392,c.currentTime+.4);
+            g.gain.setValueAtTime(0,c.currentTime);
+            g.gain.linearRampToValueAtTime(0.45,c.currentTime+.05);  // ✅ أقوى من الحضور
+            g.gain.setValueAtTime(0.45,c.currentTime+.35);
+            g.gain.linearRampToValueAtTime(0,c.currentTime+.65);
+            o.start(c.currentTime);
+            o.stop(c.currentTime+.65);
+        }
+        else{
+            // طلب = صوت مزدوج سريع
+            o.frequency.setValueAtTime(880,c.currentTime);
+            o.frequency.linearRampToValueAtTime(440,c.currentTime+.15);
+            g.gain.setValueAtTime(0,c.currentTime);
+            g.gain.linearRampToValueAtTime(0.4,c.currentTime+.05);
+            g.gain.setValueAtTime(0.4,c.currentTime+.1);
+            g.gain.linearRampToValueAtTime(0,c.currentTime+.25);
+            o.start(c.currentTime);
+            o.stop(c.currentTime+.25);
+        }
     }catch(e){}
 }
+
+// ✅ نظام الـ Modal الاحترافي
+function showConfirmModal(action, empName, branch, shift, timeStr, confCode){
+    var modal=document.getElementById("confirmModal");
+    var isCheckin=action==="حضور";
+    
+    // تحديث المحتوى
+    document.getElementById("confirmIcon").textContent=isCheckin?"🟢":"🔴";
+    document.getElementById("confirmTitle").textContent="تم تسجيل "+action+" بنجاح!";
+    document.getElementById("confirmMessage").textContent=(isCheckin?"تم تسجيل دخولك في الساعة ":"تم تسجيل خروجك في الساعة ")+timeStr;
+    document.getElementById("confirmName").textContent=empName;
+    document.getElementById("confirmTime").textContent=timeStr;
+    document.getElementById("confirmBranch").textContent=branch;
+    document.getElementById("confirmShift").textContent=shift;
+    document.getElementById("confirmCode").textContent=confCode;
+    
+    // عرض الـ Modal
+    modal.classList.add("show");
+    
+    // عد تنازلي تلقائي (10 ثواني)
+    var countdown=10;
+    var countdownEl=document.getElementById("confirmCountdown");
+    var timer=setInterval(function(){
+        countdown--;
+        countdownEl.textContent="إغلاق تلقائي بعد "+countdown+" ثواني...";
+        if(countdown<=0){
+            clearInterval(timer);
+            closeConfirmModal();
+        }
+    },1000);
+    
+    // حفظ الـ timer لإمكانية إلغاؤه
+    modal._timer=timer;
+}
+
+function closeConfirmModal(){
+    var modal=document.getElementById("confirmModal");
+    if(modal._timer)clearInterval(modal._timer);
+    modal.classList.remove("show");
+}
+
 
 
 
@@ -422,6 +613,44 @@ function logout(){
 
 var tt;
 function toast(msg){ clearTimeout(tt); var t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); tt=setTimeout(function(){t.classList.remove("show");},3200); }
-</script>
+</script><!-- ✅ Professional Confirmation Modal -->
+<div id="confirmModal">
+    <div class="confirm-box">
+        <div class="confirm-icon" id="confirmIcon">🟢</div>
+        <div class="confirm-title" id="confirmTitle">تم التسجيل بنجاح!</div>
+        <div class="confirm-sub" id="confirmMessage">تم تسجيل حضورك في النظام</div>
+        
+        <div class="confirm-details">
+            <div class="confirm-detail-row">
+                <span class="confirm-value" id="confirmName">—</span>
+                <span class="confirm-label">الاسم:</span>
+            </div>
+            <div class="confirm-detail-row">
+                <span class="confirm-value" id="confirmTime">—</span>
+                <span class="confirm-label">الوقت:</span>
+            </div>
+            <div class="confirm-detail-row">
+                <span class="confirm-value" id="confirmBranch">—</span>
+                <span class="confirm-label">الفرع:</span>
+            </div>
+            <div class="confirm-detail-row">
+                <span class="confirm-value" id="confirmShift">—</span>
+                <span class="confirm-label">الشيفت:</span>
+            </div>
+        </div>
+        
+        <div class="confirm-code" id="confirmCode">###</div>
+        
+        <div class="confirm-timer">
+            <div id="confirmCountdown">إغلاق تلقائي بعد 10 ثواني...</div>
+            <div class="timer-bar"><div class="timer-fill"></div></div>
+        </div>
+        
+        <div class="confirm-buttons">
+            <button class="confirm-btn confirm-btn-primary" onclick="closeConfirmModal()">✅ تم التسجيل</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
