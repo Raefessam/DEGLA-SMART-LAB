@@ -219,6 +219,8 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
                     <option value="يوم كامل">يوم كامل</option>
                 </select>
             </div>
+            <!-- ✅ تحسين 4: إضافة date picker لتاريخ الإذن -->
+            <div class="fg"><label>تاريخ الإذن</label><input type="date" id="leaveDate"/></div>
             <div class="fg"><label>ملاحظة (اختياري)</label><input type="text" id="leaveNote" placeholder="أي تفاصيل إضافية"/></div>
             <button class="btn bng" onclick="sendLeave()">إرسال طلب الإذن</button>
         </div>
@@ -267,8 +269,8 @@ function updateTimingBadge(timeStr){
     var now=toMins(timeStr),start=toMins(empData.shiftStart),end=toMins(empData.shiftEnd);
     var lateBy=now-start, otBy=now-end-15;
     if(lateBy>=5&&lateBy<start+60){
-        var label=lateBy>=30?"خصم يوم كامل ⛔":lateBy>=15?"خصم نص يوم ⚠️":lateBy>=10?"خصم ساعة ⚠️":"خصم 10 دقائق";
-        b.innerHTML='<div class="timing-late">⏰ تأخير '+lateBy+' دقيقة — '+label+'</div>';
+        // ✅ تصحيح: إظهار الرقم فقط بدون وصف
+        b.innerHTML='<div class="timing-late">⏰ تأخير '+lateBy+' دقيقة</div>';
     } else if(otBy>0){
         b.innerHTML='<div class="timing-ot">🌟 أوفر تايم '+Math.round(otBy)+' دقيقة</div>';
     } else {
@@ -307,6 +309,9 @@ function verifyEmp(){
 
 function register(action){
     if(!empData)return;
+    // ✅ تحسين 2: إضافة تأكيد قبل التسجيل
+    if(!confirm("هل تؤكد تسجيل "+action+"؟")){return;}
+    
     var btn=action==="حضور"?document.getElementById("btnIn"):document.getElementById("btnOut");
     btn.disabled=true;
     var now=new Date();
@@ -321,7 +326,9 @@ function register(action){
         document.getElementById("succIcon").textContent=action==="حضور"?"🟢":"🔴";
         document.getElementById("succTitle").textContent="تم تسجيل "+action+" بنجاح!";
         document.getElementById("succSub").textContent=empData.name+" — "+timeStr+(timing?" — "+timing:"");
-        playSound(action==="حضور"?"in":"out"); showStep("step4");
+        playSound(action==="حضور"?"in":"out");
+        showNotification("تم التسجيل", empData.name+" — "+timeStr, action==="حضور"?"in":"out");
+        showStep("step4");
     }).catch(function(){btn.disabled=false;toast("❌ تعذر التسجيل");});
 }
 
@@ -334,19 +341,61 @@ function switchTab(t){
 function sendSalary(){
     var amt=document.getElementById("salAmount").value;
     if(!amt){toast("⚠️ أدخل المبلغ");return;}
+    // ✅ تحسين 3: تأكيد قبل إرسال الطلب
+    if(!confirm("هل تؤكد طلب سلفة بمبلغ "+amt+" ج.م؟")){return;}
+    
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"salary",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,amount:amt,reason:document.getElementById("salReason").value})})
-    .then(function(){playSound("req");toast("✅ تم إرسال طلب السلفة!");document.getElementById("salAmount").value="";document.getElementById("salReason").value="";})
+    .then(function(){
+        playSound("req");
+        toast("✅ تم إرسال طلب السلفة!");
+        showNotification("تم إرسال الطلب", "طلب سلفة بمبلغ "+amt+" ج.م", "req");
+        document.getElementById("salAmount").value="";
+        document.getElementById("salReason").value="";
+    })
     .catch(function(){toast("❌ تعذر الإرسال");});
 }
 function sendLeave(){
     var reason=document.getElementById("leaveReason").value.trim();
+    var leaveDate=document.getElementById("leaveDate").value;
+    var duration=document.getElementById("leaveDur").value;
+    
     if(!reason){toast("⚠️ أدخل سبب الإذن");return;}
-    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"leave",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,leaveReason:reason,leaveDuration:document.getElementById("leaveDur").value,leaveNote:document.getElementById("leaveNote").value})})
-    .then(function(){playSound("req");toast("✅ تم إرسال طلب الإذن!");document.getElementById("leaveReason").value="";document.getElementById("leaveNote").value="";})
+    if(!leaveDate){toast("⚠️ اختر تاريخ الإذن");return;}
+    
+    // ✅ تحسين 5: تأكيد قبل إرسال طلب الإذن
+    if(!confirm("هل تؤكد طلب إذن بتاريخ "+leaveDate+" - "+duration+"؟")){return;}
+    
+    fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"addRequest",type:"leave",employeeName:empData.name,employeeCode:empData.code,branch:empData.selectedBranch,leaveReason:reason,leaveDuration:duration,leaveDate:leaveDate,leaveNote:document.getElementById("leaveNote").value})})
+    .then(function(){
+        playSound("req");
+        toast("✅ تم إرسال طلب الإذن!");
+        showNotification("تم إرسال طلب الإذن", "تاريخ: "+leaveDate+" - "+duration, "req");
+        document.getElementById("leaveReason").value="";
+        document.getElementById("leaveDate").value="";
+        document.getElementById("leaveNote").value="";
+    })
     .catch(function(){toast("❌ تعذر الإرسال");});
 }
 
+function showNotification(title, message, type){
+    // ✅ الإشعارات الكتابية والصوتية
+    // 1. Notification API (إن توفرت الإذن)
+    if("Notification" in window && Notification.permission==="granted"){
+        new Notification(title,{body:message,icon:"https://raw.githubusercontent.com/raefessam/DEGLA-SMART-LAB/main/logo.png"});
+    }
+    // 2. Toast notification
+    toast(title+" — "+message);
+    // 3. Sound notification
+    playSound(type);
+}
+
+// طلب إذن الإشعارات عند التحميل
+if("Notification" in window && Notification.permission==="default"){
+    Notification.requestPermission();
+}
+
 function playSound(type){
+    // ✅ تحسين الإشعارات الصوتية
     try{if(navigator.vibrate)navigator.vibrate(type==="in"?[80,40,80]:type==="req"?[60,30,60,30,60]:[120]);}catch(e){}
     try{
         var c=new(window.AudioContext||window.webkitAudioContext)();
@@ -358,6 +407,8 @@ function playSound(type){
         else{o.frequency.setValueAtTime(523,c.currentTime);o.frequency.linearRampToValueAtTime(392,c.currentTime+.2);o.frequency.linearRampToValueAtTime(330,c.currentTime+.4);g.gain.setValueAtTime(0,c.currentTime);g.gain.linearRampToValueAtTime(0.2,c.currentTime+.05);g.gain.setValueAtTime(0.2,c.currentTime+.3);g.gain.linearRampToValueAtTime(0,c.currentTime+.55);o.start(c.currentTime);o.stop(c.currentTime+.55);}
     }catch(e){}
 }
+
+
 
 function showStep(id){ document.querySelectorAll(".step").forEach(function(s){s.classList.remove("on");}); document.getElementById(id).classList.add("on"); window.scrollTo(0,0); }
 function goAtt(){ showStep("step2"); }
