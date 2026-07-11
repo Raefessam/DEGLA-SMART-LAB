@@ -552,25 +552,44 @@ function closeHistoryModal(){
 
 // ✅ تحميل السجل الشهري من الـ Backend
 function loadHistoryData(){
-    if(!empData)return;
+    if(!empData){toast("❌ بيانات الموظف غير موجودة");return;}
+    if(!empData.code){toast("❌ كود الموظف غير موجود");return;}
+    
     var monthVal=document.getElementById("historyMonth").value;
     if(!monthVal){toast("⚠️ اختر الشهر");return;}
     
     var summaryEl=document.getElementById("historySummary");
     var containerEl=document.getElementById("historyContainer");
     
-    summaryEl.innerHTML='<span class="sp"></span> جاري التحميل...';
-    containerEl.innerHTML='';
+    summaryEl.innerHTML='⏳ جاري التحميل...';
+    containerEl.innerHTML='<div class="no-data">⏳ جاري تحميل البيانات...</div>';
     
     fetch(APPS+"?action=getEmployeeHistory&code="+encodeURIComponent(empData.code)+"&yearMonth="+encodeURIComponent(monthVal))
     .then(function(r){return r.json();})
     .then(function(d){
-        if(!d.success){toast("❌ خطأ في التحميل");return;}
+        if(!d){
+            toast("❌ لم يأتِ رد من السيرفر");
+            summaryEl.innerHTML='خطأ: بدون رد';
+            return;
+        }
+        if(d.error || !d.success){
+            var errMsg = d.message || d.error || "خطأ مجهول";
+            toast("❌ الخطأ: "+errMsg);
+            summaryEl.innerHTML='❌ الخطأ: '+errMsg;
+            containerEl.innerHTML='<div class="no-data">❌ '+errMsg+'</div>';
+            return;
+        }
+        if(!d.data){
+            toast("❌ البيانات فارغة");
+            summaryEl.innerHTML='📭 لا توجد بيانات';
+            return;
+        }
         renderHistoryTable(d.data, monthVal);
     })
-    .catch(function(){
-        toast("❌ تعذر تحميل البيانات");
-        summaryEl.innerHTML='خطأ في التحميل';
+    .catch(function(err){
+        toast("❌ خطأ في الاتصال: "+err);
+        summaryEl.innerHTML='❌ خطأ في الاتصال';
+        containerEl.innerHTML='<div class="no-data">❌ فشل الاتصال بالسيرفر</div>';
     });
 }
 
