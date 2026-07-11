@@ -489,7 +489,60 @@ function verifyEmp(){
 
 function register(action){
     if(!empData)return;
-    // ✅ تحسين 2: إضافة تأكيد قبل التسجيل
+    
+    // ✅ فحص آخر تسجيل قبل السماح بالتسجيل الجديد
+    checkLastAttendance(action);
+}
+
+// ✅ فحص التسجيلات المكررة
+function checkLastAttendance(action){
+    fetch(APPS+"?action=getLastAttendance&code="+encodeURIComponent(empData.code))
+    .then(function(r){return r.json();})
+    .then(function(d){
+        if(!d.success || !d.data){
+            // لا توجد تسجيلات سابقة = اسمح بالتسجيل
+            proceedWithRegistration(action);
+            return;
+        }
+        
+        var last=d.data;
+        
+        // منطق المنع:
+        if(action==="حضور" && last.action==="حضور"){
+            // تسجيل حضور بدون انصراف = منع التكرار
+            toast("⚠️ لقد سجلت حضورك بالفعل في "+last.time+"\nيجب عليك الانصراف من "+last.branch+" أولاً");
+            return;
+        }
+        
+        if(action==="انصراف" && last.action==="انصراف"){
+            // تسجيل انصراف بدون حضور = غريب لكن منع
+            toast("⚠️ لقد سجلت انصرافك بالفعل في "+last.time);
+            return;
+        }
+        
+        if(action==="انصراف" && last.action!=="حضور"){
+            // محاولة انصراف بدون حضور
+            toast("⚠️ لا يمكن الانصراف قبل تسجيل الحضور");
+            return;
+        }
+        
+        // كل شيء تمام = اسمح بالتسجيل
+        if(last.action==="انصراف"){
+            // حضور جديد بعد انصراف سابق = تمام
+            proceedWithRegistration(action);
+        } else if(action==="انصراف" && last.action==="حضور"){
+            // انصراف بعد حضور = تمام
+            proceedWithRegistration(action);
+        }
+    })
+    .catch(function(){
+        // خطأ في الفحص = اسمح بالتسجيل
+        proceedWithRegistration(action);
+    });
+}
+
+// تسجيل بعد التحقق
+function proceedWithRegistration(action){
     if(!confirm("هل تؤكد تسجيل "+action+"؟")){return;}
     
     var btn=action==="حضور"?document.getElementById("btnIn"):document.getElementById("btnOut");
@@ -504,26 +557,13 @@ function register(action){
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:empData.selectedBranch,shift:empData.selectedShift,recordAction:action,timing:timing})})
     .then(function(){
         btn.disabled=false;
-        
-        // ✅ تفعيل الإشعارات الاحترافية
-        playSound(action==="حضور"?"in":"out");  // صوت قوي + اهتزاز
-        
-        // توليد رقم تأكيد
+        playSound(action==="حضور"?"in":"out");
         var confCode=empData.code+"-"+new Date().getTime().toString().slice(-6);
-        
-        // عرض الـ Modal الاحترافي
-        showConfirmModal(
-            action,
-            empData.name,
-            empData.selectedBranch,
-            empData.selectedShift,
-            timeStr,
-            confCode
-        );
-        
-        // إضافة toast كإشعار إضافي
+        showConfirmModal(action, empData.name, empData.selectedBranch, empData.selectedShift, timeStr, confCode);
         showNotification("تم التسجيل", empData.name+" — "+timeStr, action==="حضور"?"in":"out");
-    }).catch(function(){btn.disabled=false;toast("❌ تعذر التسجيل");});
+        setTimeout(closeConfirmModal, 10000);
+    })
+    .catch(function(){btn.disabled=false;toast("❌ تعذر التسجيل");});
 }
 
 function switchTab(t){
