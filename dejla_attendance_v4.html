@@ -339,10 +339,9 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
     <div class="card">
         <div class="clock" id="clockDisp">00:00:00</div>
         <div class="clock-sub" id="shiftDisp"></div>
-        <div id="timingBadge"></div>
         <!-- ✅ الفرع والشيفت -->
         <div class="fg"><label>الفرع</label>
-            <select id="empBranch">
+            <select id="empBranch" onchange="updateTiming()">
                 <option value="">اختر الفرع</option>
                 <option value="فرع كورنيش طرة">فرع كورنيش طرة</option>
                 <option value="فرع زهراء المعادي">فرع زهراء المعادي</option>
@@ -350,12 +349,14 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
             </select>
         </div>
         <div class="fg"><label>الشيفت</label>
-            <select id="empShift">
+            <select id="empShift" onchange="updateTiming()">
                 <option value="">اختر الشيفت</option>
                 <option value="شيفت 1">شيفت 1</option>
                 <option value="شيفت 2">شيفت 2</option>
             </select>
         </div>
+        <!-- ✅ شريط التنبيه (فوق الأزرار) -->
+        <div id="timingBadge"></div>
         <div class="att-btns">
             <button class="att-in" id="btnIn" onclick="register('حضور')">🟢 تسجيل حضور</button>
             <button class="att-out" id="btnOut" onclick="register('انصراف')">🔴 تسجيل انصراف</button>
@@ -435,6 +436,48 @@ setTimeout(function(){
 },2200);
 
 function startClock(){ updateClock(); clockTimer=setInterval(updateClock,1000); }
+
+// ✅ تحديث شريط التنبيه ديناميكياً
+function updateTiming(){
+    var branch=document.getElementById("empBranch").value;
+    var shift=document.getElementById("empShift").value;
+    var badge=document.getElementById("timingBadge");
+    
+    if(!branch||!shift){
+        badge.innerHTML="";
+        return;
+    }
+    
+    var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
+    var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
+    
+    var now=new Date();
+    var timeStr=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit"});
+    var shiftStart=toMins(times.s), shiftEnd=toMins(times.e), curMins=toMins(timeStr);
+    var timing="";
+    
+    // حساب التنبيه قبل الحضور
+    if(curMins<shiftStart){
+        var minsBefore=shiftStart-curMins;
+        var h=Math.floor(minsBefore/60), m=minsBefore%60;
+        timing="⏰ الشيفت يبدأ في "+h+"س "+m+"د";
+        badge.innerHTML="<div style=\"padding:10px;background:#e3f2fd;color:#1565c0;border:2px solid #1565c0;border-radius:10px;text-align:center;font-weight:700;margin-bottom:10px;\">"+timing+"</div>";
+    }
+    // حساب التأخير (بعد بداية الشيفت)
+    else if(curMins>=shiftStart && curMins<shiftEnd){
+        var late=curMins-shiftStart;
+        if(late>=1){
+            timing="⚠️ تأخير "+late+" دقيقة";
+            badge.innerHTML="<div style=\"padding:10px;background:#ffebee;color:#c62828;border:2px solid #c62828;border-radius:10px;text-align:center;font-weight:700;margin-bottom:10px;\">"+timing+"</div>";
+        } else {
+            badge.innerHTML="<div style=\"padding:10px;background:#e8f5e9;color:#2e7d32;border:2px solid #2e7d32;border-radius:10px;text-align:center;font-weight:700;margin-bottom:10px;\">✅ في الموعد</div>";
+        }
+    }
+    // بعد انتهاء الشيفت
+    else {
+        badge.innerHTML="<div style=\"padding:10px;background:#fff3e0;color:#e65100;border:2px solid #e65100;border-radius:10px;text-align:center;font-weight:700;margin-bottom:10px;\">⏰ انتهى الشيفت</div>";
+    }
+}
 function updateClock(){
     var now=new Date();
     var cairoTime=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",second:"2-digit"});
@@ -442,7 +485,7 @@ function updateClock(){
     var m=cairoTime.split(":")[1];
     var s=String(now.getSeconds()).padStart(2,"0");
     document.getElementById("clockDisp").textContent=h+":"+m+":"+s;
-    updateTimingBadge(h+":"+m);
+    updateTiming(); // ✅ تحديث شريط التنبيه كل ثانية
 }
 function updateTimingBadge(timeStr){
     if(!empData)return;
