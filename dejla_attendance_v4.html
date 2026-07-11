@@ -564,32 +564,54 @@ function loadHistoryData(){
     summaryEl.innerHTML='⏳ جاري التحميل...';
     containerEl.innerHTML='<div class="no-data">⏳ جاري تحميل البيانات...</div>';
     
+    console.log("Loading history for: "+empData.code+", month: "+monthVal);
+    
     fetch(APPS+"?action=getEmployeeHistory&code="+encodeURIComponent(empData.code)+"&yearMonth="+encodeURIComponent(monthVal))
-    .then(function(r){return r.json();})
+    .then(function(r){
+        console.log("Response status: "+r.status);
+        return r.json();
+    })
     .then(function(d){
+        console.log("Response data:", d);
+        
         if(!d){
             toast("❌ لم يأتِ رد من السيرفر");
-            summaryEl.innerHTML='خطأ: بدون رد';
+            summaryEl.innerHTML='❌ لا توجد استجابة';
+            containerEl.innerHTML='<div class="no-data">❌ فشل الاتصال</div>';
             return;
         }
         if(d.error || !d.success){
-            var errMsg = d.message || d.error || "خطأ مجهول";
-            toast("❌ الخطأ: "+errMsg);
-            summaryEl.innerHTML='❌ الخطأ: '+errMsg;
-            containerEl.innerHTML='<div class="no-data">❌ '+errMsg+'</div>';
+            var errMsg = d.message || d.error || "خطأ مجهول في التحميل";
+            console.log("Backend error: "+errMsg);
+            
+            // رسائل مخصصة
+            if(errMsg.includes("Attendance")){
+                errMsg = "❌ ورقة الحضور غير موجودة";
+            } else if(errMsg.includes("missing")){
+                errMsg = "❌ بيانات ناقصة";
+            } else if(errMsg.includes("length") || errMsg.length===0){
+                errMsg = "❌ لا توجد بيانات لهذا الشهر";
+            }
+            
+            toast(errMsg);
+            summaryEl.innerHTML=errMsg;
+            containerEl.innerHTML='<div class="no-data">'+errMsg+'</div>';
             return;
         }
         if(!d.data){
             toast("❌ البيانات فارغة");
             summaryEl.innerHTML='📭 لا توجد بيانات';
+            containerEl.innerHTML='<div class="no-data">📭 لا توجد بيانات</div>';
             return;
         }
+        console.log("Rendering: attendance="+d.data.attendance.length+", requests="+d.data.requests.length);
         renderHistoryTable(d.data, monthVal);
     })
     .catch(function(err){
-        toast("❌ خطأ في الاتصال: "+err);
-        summaryEl.innerHTML='❌ خطأ في الاتصال';
-        containerEl.innerHTML='<div class="no-data">❌ فشل الاتصال بالسيرفر</div>';
+        console.log("Fetch error: "+err);
+        toast("❌ خطأ: "+err.toString());
+        summaryEl.innerHTML='❌ فشل الاتصال';
+        containerEl.innerHTML='<div class="no-data">❌ تأكد من الإنترنت</div>';
     });
 }
 
