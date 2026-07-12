@@ -601,14 +601,17 @@ function proceedWithRegistration(action, branch, shift){
         } else {
             timing="✅ في الموعد";
         }
-    } else {
-        // الانصراف والأوفر تايم
+    } else if(action==="انصراف"){
+        // الانصراف والأوفر تايم — يُحسب فقط عند الانصراف الفعلي
         var ot=cur-end-15;
         if(ot>0){
             timing="🌟 أوفر تايم "+Math.round(ot)+" دقيقة";
         } else {
             timing="✅ انصراف";
         }
+    } else {
+        // safety: في حالة action غير متوقع
+        timing="";
     }
     
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:branch,shift:shift,recordAction:action,timing:timing})})
