@@ -1473,11 +1473,13 @@
                     if (!needsReview && !openToday) {
                         if (tm && tm.indexOf("تأخير") >= 0) {
                             var ms = parseInt(tm.replace(/[^0-9]/g,"")) || 0;
+                            ms = Math.min(ms, 240); // حماية: سقف منطقي 4 ساعات — لو النص فيه رقم تالف ميتحسبش خصم غلط
                             var pen = calcLatePenalty(sf, ms, spd, sph, spm);
                             la = pen.amount; ll = pen.label; pending = pen.pending;
                         }
                         if (otTm && otTm.indexOf("أوفر") >= 0) {
                             var om = parseInt(otTm.replace(/[^0-9]/g,"")) || 0;
+                            om = Math.min(om, 300); // حماية: سقف منطقي 5 ساعات — لو النص فيه رقم تالف ميتحسبش أوفر تايم غلط
                             oa = (om/60)*sph*1.5; ol = "أوفر تايم " + om + " د";
                         }
                         if (otTm && otTm.indexOf("انصراف مبكر") >= 0) {
@@ -2189,14 +2191,16 @@
             }
             function bulkActivatePending() {
                 var store = getPendingStore();
-                Object.keys(store).forEach(function(id){
-                    if (store[id].status === "pending") {
-                        store[id].status = "activated";
-                        store[id].decidedAt = new Date().toISOString();
-                    }
+                var ids = Object.keys(store).filter(function(id){ return store[id].status === "pending"; });
+                // ✅ إصلاح: النسخة القديمة كانت بتحدّث النسخة المحلية بس من غير ما تبعت
+                // القرار للسيرفر — يعني التقرير الشهري (سيرفر-محور) كان فاضل شايف الخصومات
+                // دي "معلّقة" لحد الأبد. دلوقتي كل عنصر بيتبعت فعليًا عبر نفس المسار
+                // اللي بيستخدمه زرار "فعّل" الفردي، عشان يتسجل في شيت PendingDeductions
+                ids.forEach(function(id){
+                    var rec = store[id];
+                    decidePendingDeduction(rec.code, rec.date, rec.shift, "activated", {name:rec.name, branch:rec.branch, amount:rec.amount});
                 });
-                savePendingStore(store);
-                toast("✅", "تم تفعيل كل الخصومات المعلّقة", "");
+                toast("✅", "تم تفعيل " + ids.length + " خصم معلّق", "");
                 renderPendingTab();
             }
 
@@ -2534,10 +2538,13 @@
                 document.getElementById("repContent").innerHTML = ldHTML();
                 document.getElementById("repPrintBtns").style.display = "none";
 
-                // جيب الحضور والطلبات مع بعض
+                // جيب الحضور والطلبات مع بعض، وزامن حالة الخصومات المعلّقة من
+                // السيرفر الأول (بدل ما نعتمد على نسخة محلية ممكن تبقى قديمة —
+                // خصوصًا لو حد قرر عليها من جهاز تاني)
                 Promise.all([
                     fetch(URL + "?action=getAttendance").then(function(r){return r.json();}),
-                    fetch(URL + "?action=getRequests").then(function(r){return r.json();})
+                    fetch(URL + "?action=getRequests").then(function(r){return r.json();}),
+                    syncPendingFromServer()
                 ]).then(function(results) {
                     var attData = results[0];
                     var reqData = results[1];
