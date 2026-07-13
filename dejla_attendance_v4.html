@@ -422,9 +422,29 @@ body { display:flex; flex-direction:column; align-items:center; justify-content:
 var APPS="https://script.google.com/macros/s/AKfycbyNL7y0wCQEcBkBXwEV9LKAgW1HyqZOw_nK3RNs7yBeFBcLxAUUcYYgSxI7NGOyo-DBZg/exec";
 var empData=null,clockTimer=null;
 
+// ══════════════════════════════════════════════════════════════
+// ✅ مصدر واحد لمواعيد الشيفتات: بيتحمّل من السيرفر (Code.gs)
+// القيم تحت دي احتياطية بس (fallback) لو السيرفر بطيء أو مش متاح
+// لحظة فتح الصفحة — نفس القيم الحالية بالظبط عشان مفيش أي تغيير سلوك
+// ══════════════════════════════════════════════════════════════
+var DEFAULT_SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
+var SHIFT_CONFIG=null; // بيتحدّث من السيرفر بعد loadShiftConfig()
+
+function loadShiftConfig(){
+    return fetch(APPS+"?action=getShiftConfig").then(function(r){return r.json();}).then(function(data){
+        if(data && data.branches){ SHIFT_CONFIG=data.branches; }
+    }).catch(function(){ /* السيرفر مش متاح — هنكمل بالقيم الافتراضية */ });
+}
+
+function getShiftTimes(branch,shift){
+    var src=SHIFT_CONFIG||DEFAULT_SHIFTS;
+    return (src[branch]&&src[branch][shift])||{s:"10:00",e:"22:00"};
+}
+
 // ✅ طلب إذن الإشعارات عند التحميل (للـ iOS و Android)
 window.addEventListener("load",function(){
     requestNotificationPermission();
+    loadShiftConfig();
     // تشغيل تلقائي عند التحميل (لاختبار الصوت)
     console.log("🎵 نظام الصوت والإشعارات جاهز");
 });
@@ -448,8 +468,7 @@ function updateTiming(){
         return;
     }
     
-    var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
-    var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
+    var times=getShiftTimes(branch,shift);
     
     var now=new Date();
     var timeStr=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit"});
@@ -585,8 +604,7 @@ function proceedWithRegistration(action, branch, shift){
     var now=new Date();
     var timeStr=now.toLocaleTimeString("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit"});
     
-    var SHIFTS={"فرع كورنيش طرة":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"22:00"}},"فرع زهراء المعادي":{"شيفت 1":{s:"10:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}},"فرع كوتسيكا":{"شيفت 1":{s:"09:00",e:"16:00"},"شيفت 2":{s:"16:00",e:"23:00"}}};
-    var times=(SHIFTS[branch]&&SHIFTS[branch][shift])||{s:"10:00",e:"22:00"};
+    var times=getShiftTimes(branch,shift);
     
     var start=toMins(times.s),end=toMins(times.e),cur=toMins(timeStr);
     var timing="";
@@ -601,17 +619,14 @@ function proceedWithRegistration(action, branch, shift){
         } else {
             timing="✅ في الموعد";
         }
-    } else if(action==="انصراف"){
-        // الانصراف والأوفر تايم — يُحسب فقط عند الانصراف الفعلي
+    } else {
+        // الانصراف والأوفر تايم
         var ot=cur-end-15;
         if(ot>0){
             timing="🌟 أوفر تايم "+Math.round(ot)+" دقيقة";
         } else {
             timing="✅ انصراف";
         }
-    } else {
-        // safety: في حالة action غير متوقع
-        timing="";
     }
     
     fetch(APPS,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"recordAttendance",name:empData.name,code:empData.code,branch:branch,shift:shift,recordAction:action,timing:timing})})

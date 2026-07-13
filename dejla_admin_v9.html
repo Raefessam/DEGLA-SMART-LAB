@@ -1292,16 +1292,35 @@
                 return "20" + ph;
             }
 
-            // ساعات الشيفت الفعلية لكل فرع وشيفت
-            var SHIFT_HOURS = {
-                "فرع زهراء المعادي": { "شيفت 1": 6, "شيفت 2": 7 },
-                "فرع كوتسيكا":       { "شيفت 1": 7, "شيفت 2": 7 },
-                "فرع كورنيش طرة":     { "شيفت 1": 6, "شيفت 2": 6 }
+            // ══════════════════════════════════════════════════════════
+            // ✅ مصدر واحد لمواعيد ومدة الشيفتات: بيتحمّل من السيرفر (Code.gs)
+            // القيم تحت دي احتياطية بس (fallback) لو السيرفر بطيء أو مش
+            // متاح لحظة التحميل — نفس القيم الحالية بالظبط، مفيش تغيير سلوك
+            // ══════════════════════════════════════════════════════════
+            var DEFAULT_SHIFT_TIMES = {
+                "فرع زهراء المعادي": { "شيفت 1": {start:"10:00", end:"16:00"}, "شيفت 2": {start:"16:00", end:"23:00"} },
+                "فرع كوتسيكا":       { "شيفت 1": {start:"09:00", end:"16:00"}, "شيفت 2": {start:"16:00", end:"23:00"} },
+                "فرع كورنيش طرة":     { "شيفت 1": {start:"10:00", end:"16:00"}, "شيفت 2": {start:"16:00", end:"22:00"} }
             };
+            var SHIFT_TIMES = null; // بيتحدّث من السيرفر بعد loadShiftConfig()
+
+            function loadShiftConfig() {
+                return fetch(URL + "?action=getShiftConfig").then(function(r){ return r.json(); }).then(function(data){
+                    if (data && data.branches) { SHIFT_TIMES = data.branches; }
+                }).catch(function(){ /* السيرفر مش متاح — هنكمل بالقيم الافتراضية */ });
+            }
+
+            function shiftHoursFromTimes(times) {
+                if (!times || !times.start || !times.end) return 8;
+                var toM = function(t){ var p=t.split(":"); return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0); };
+                var hrs = (toM(times.end) - toM(times.start)) / 60;
+                return hrs > 0 ? hrs : 8;
+            }
+
             function getShiftHours(branch, shift) {
-                var b = SHIFT_HOURS[branch];
-                if (b && b[shift]) return b[shift];
-                return 8; // افتراضي لو فرع/شيفت غير معروف
+                var src = SHIFT_TIMES || DEFAULT_SHIFT_TIMES;
+                var b = src[branch];
+                return (b && b[shift]) ? shiftHoursFromTimes(b[shift]) : 8; // افتراضي لو فرع/شيفت غير معروف
             }
 
             // ══════════════════════════════════════════════════════════
@@ -2982,6 +3001,7 @@ function playAdminSound() {
 // تفعيل الإشعارات عند تحميل الصفحة
 window.addEventListener("load", function() {
   requestAdminNotificationPermission();
+  loadShiftConfig();
 });
 
 
