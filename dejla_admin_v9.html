@@ -1857,6 +1857,8 @@
                     html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--gd);">+ أوفر تايم (' + d.overtimeHours + ' س)</span><span class="rp-val" style="color:var(--gd);">+' + d.overtimeAmount + ' ج.م</span></div>';
                     html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--gd);">+ شغل الجمعة (' + d.fridayHours + ' س)</span><span class="rp-val" style="color:var(--gd);">+' + d.fridayAmount + ' ج.م</span></div>';
                     html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--r);">- خصم التأخير</span><span class="rp-val" style="color:var(--r);">-' + d.lateDeductAmount + ' ج.م</span></div>';
+                    if (d.earlyLeaveDeductAmount) html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--r);">- انصراف مبكر</span><span class="rp-val" style="color:var(--r);">-' + d.earlyLeaveDeductAmount + ' ج.م</span></div>';
+                    if (d.leaveDeductAmount) html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--r);">- خصم الإذن</span><span class="rp-val" style="color:var(--r);">-' + d.leaveDeductAmount + ' ج.م</span></div>';
                     html += '<div class="rp-row"><span class="rp-lbl" style="color:var(--r);">- السلف المعتمدة</span><span class="rp-val" style="color:var(--r);">-' + d.approvedLoans + ' ج.م</span></div>';
                     html += '<div class="rp-net"><div class="rp-net-lbl">الراتب الصافي</div><div class="rp-net-val">' + Number(d.netSalary).toLocaleString() + ' ج.م</div></div>';
                     if (d.details && d.details.length) {
@@ -1897,14 +1899,13 @@
                 if (!month) { toast("(!)", "اختار الشهر الأول", ""); return; }
                 document.getElementById("monthlyContent").innerHTML = ldHTML();
 
-                Promise.all([
-                    fetch(URL + "?action=getEmployees").then(function(r){return r.json();}),
-                    fetch(URL + "?action=getAttendance").then(function(r){return r.json();}),
-                    fetch(URL + "?action=getRequests").then(function(r){return r.json();})
-                ]).then(function(results) {
-                    var emps = (results[0].employees || []).filter(function(e){ return e.status === "نشط" && e.salary; });
-                    var allRecs = results[1].records || [];
-                    var allReqs2 = results[2].requests || [];
+                // ✅ الحساب دلوقتي بالكامل في السيرفر (نفس المحرك اللي بيستخدمه
+                // التقرير الفردي — computeSalaryForEmployee_ في Code.gs)، عشان
+                // الأرقام هنا تتطابق مع تقرير أي موظف فردي دايمًا، مفيش حساب مكرر هنا
+                fetch(URL + "?action=getMonthlyReportAllEmployees&month=" + encodeURIComponent(month))
+                .then(function(r){ return r.json(); })
+                .then(function(data) {
+                    var emps = data.employees || [];
 
                     var parts = month.split("-");
                     var yr = parseInt(parts[0]), mn = parseInt(parts[1])-1;
@@ -1914,7 +1915,7 @@
                     var endDay3 = isCurMonth3 ? parseInt(todayStr3.split("-")[2]) : dim;
                     var mNames2 = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
-                    // حساب كل موظف
+                    // تحويل نتائج السيرفر لنفس شكل الجدول اللي الواجهة متوقعاه
                     var empResults = [];
                     var totalBasic = 0, totalDeduct = 0, totalOT = 0, totalLoans2 = 0, totalLeaveD = 0, totalNet = 0;
                     var totalPending = 0, totalReview = 0;
@@ -1922,85 +1923,24 @@
                     var alerts = [];
                     var totalPresenceDays = 0, totalWd = 0;
 
-                    emps.forEach(function(emp) {
-                        var salary = parseFloat(emp.salary) || 0;
-                        var hireDate2 = emp.hireDate || "";
-                        var hireMonth2 = hireDate2 ? hireDate2.substring(0,7) : "";
-                        var startDay2 = 1;
-                        if (hireMonth2 === month) {
-                            startDay2 = parseInt(hireDate2.split("-")[2]) || 1;
-                        } else if (hireMonth2 && hireMonth2 > month) {
-                            startDay2 = endDay3 + 1;
-                        }
-                        var wd = 0;
-                        for (var dw=startDay2; dw<=endDay3; dw++) { if(new Date(yr,mn,dw).getDay()!==5) wd++; }
-                        totalWd += wd;
-                        var spd = salary / (wd||1);
+                    emps.forEach(function(r) {
+                        if (r.error) return; // موظف من غير أيام عمل في الشهر ده (مثلاً اتعين بعده) — يتخطى
 
-                        // سجلات الحضور
-                        var recs = allRecs.filter(function(r){
-                            return r.code === emp.code && r.date && r.date.startsWith(month);
-                        });
-                        var dm2 = {};
-                        recs.forEach(function(r){if(!dm2[r.date])dm2[r.date]=[];dm2[r.date].push(r);});
+                        var salary = r.baseSalary || 0;
+                        var presentDays = r.presentDays || 0;
+                        var absentDays = r.absentDays || 0;
+                        var lateDeduct = r.lateDeductAmount || 0;
+                        var otAmount = r.overtimeAmount || 0;
+                        var loans = r.approvedLoans || 0;
+                        var leaveDeduct = r.leaveDeductAmount || 0;
+                        var netSalary = r.netSalary || 0;
+                        var pendingDeductEmp = r.pendingDeductAmount || 0;
+                        var reviewCountEmp = r.reviewCount || 0;
+                        var lateCount = r.lateCount || 0;
+                        var presenceRateEmp = r.presenceRate || 0;
+                        var avgDailyHours = r.avgDailyHours || 0;
 
-                        var presentDays = 0, absentDays = 0, lateDeduct = 0, otAmount = 0, lateCount = 0, empWorkMins = 0, earlyLeaveDeductEmp = 0;
-                        var pendingDeductEmp = 0, reviewCountEmp = 0;
-                        for (var d2=startDay2;d2<=endDay3;d2++){
-                            var dt = yr+"-"+String(mn+1).padStart(2,"0")+"-"+String(d2).padStart(2,"0");
-                            if(new Date(yr,mn,d2).getDay()===5) continue;
-                            var dr2 = dm2[dt] || [];
-                            if (!dr2.length) { absentDays++; continue; }
-                            presentDays++;
-                            var insDay = dr2.filter(function(r){return r.action==="حضور";});
-                            var outsDay = dr2.filter(function(r){return r.action==="انصراف";});
-                            var dayCalc = computeShiftFinancials(insDay, outsDay, spd, emp.code, emp.name, dt);
-                            empWorkMins += dayCalc.totalMins;
-                            dayCalc.shifts.forEach(function(s){
-                                if (s.needsReview) { reviewCountEmp++; return; }
-                                if (s.lateAmount > 0) {
-                                    lateCount++;
-                                    if (s.latePending) {
-                                        var st = getPendingStatus(emp.code, dt, s.shift);
-                                        if (st && st.status === "activated") lateDeduct += s.lateAmount;
-                                        else if (st && st.status === "pending") pendingDeductEmp += s.lateAmount;
-                                        // "cancelled" أو "expired" = صفر، مفيش تأثير
-                                    } else {
-                                        lateDeduct += s.lateAmount;
-                                    }
-                                }
-                                otAmount += s.otAmount;
-                                earlyLeaveDeductEmp += s.earlyAmount;
-                            });
-                        }
-
-                        // الطلبات المعتمدة
-                        var empReqs = allReqs2.filter(function(r){
-                            var st = (r.status||"").toString().trim();
-                            var isApp = st==="approved"||st==="معتمد";
-                            var ts = (r.timestamp||"").toString();
-                            return r.employeeCode===emp.code && isApp && (ts.startsWith(month)||ts.indexOf(month)>=0);
-                        });
-
-                        var loans = 0, leaveDeduct = 0, leaveHrs = 0;
-                        empReqs.forEach(function(r){
-                            var isSal = r.type==="salary"||r.type==="سلفة";
-                            if(isSal){ loans += parseFloat(r.amount)||0; return; }
-                            var dur = (r.leaveDuration||"").toString();
-                            if(dur.indexOf("يوم")>=0){ leaveDeduct += spd/2; }
-                            else {
-                                var hrs=0;
-                                if(dur.indexOf("ساعتين")>=0) hrs=2;
-                                else { var hm=dur.match(/(\d+)/); hrs=hm?parseInt(hm[1]):1; }
-                                leaveHrs+=hrs;
-                                if(leaveHrs>4){ leaveDeduct+=(leaveHrs-4)*(spd/getShiftHours(emp.branch,emp.shift)); }
-                            }
-                        });
-
-                        var netSalaryRaw = (spd*presentDays) - lateDeduct - earlyLeaveDeductEmp + otAmount - loans - leaveDeduct;
-                        var netSalary = Math.max(0, netSalaryRaw); // حد أدنى: الصافي مايبقاش سالب
-
-                        // إحصائيات
+                        totalWd += r.workingDays || 0;
                         totalBasic += salary;
                         totalDeduct += lateDeduct;
                         totalOT += otAmount;
@@ -2011,18 +1951,15 @@
                         totalPending += pendingDeductEmp;
                         totalReview += reviewCountEmp;
 
-                        if(presentDays > maxPresent.days){ maxPresent = {name:emp.name, days:presentDays}; }
-                        if(absentDays > maxAbsent.days){ maxAbsent = {name:emp.name, days:absentDays}; }
-                        if(absentDays >= 5){ alerts.push(emp.name + " — غياب " + absentDays + " يوم"); }
-                        if(loans >= salary * 0.5){ alerts.push(emp.name + " — سلفة كبيرة (" + Math.round(loans) + " ج.م)"); }
-                        if(pendingDeductEmp > 0){ alerts.push(emp.name + " — عنده خصومات معلّقة بانتظار قرارك (" + Math.round(pendingDeductEmp) + " ج.م)"); }
-                        if(reviewCountEmp > 0){ alerts.push(emp.name + " — " + reviewCountEmp + " بصمة تحتاج مراجعة (بيانات دخول/خروج ناقصة)"); }
-
-                        var presenceRateEmp = (presentDays+absentDays) ? Math.round(presentDays/(presentDays+absentDays)*100) : 0;
-                        var avgDailyHours = presentDays ? Math.round((empWorkMins/presentDays/60)*10)/10 : 0;
+                        if(presentDays > maxPresent.days){ maxPresent = {name:r.name, days:presentDays}; }
+                        if(absentDays > maxAbsent.days){ maxAbsent = {name:r.name, days:absentDays}; }
+                        if(absentDays >= 5){ alerts.push(r.name + " — غياب " + absentDays + " يوم"); }
+                        if(loans >= salary * 0.5){ alerts.push(r.name + " — سلفة كبيرة (" + Math.round(loans) + " ج.م)"); }
+                        if(pendingDeductEmp > 0){ alerts.push(r.name + " — عنده خصومات معلّقة بانتظار قرارك (" + Math.round(pendingDeductEmp) + " ج.م)"); }
+                        if(reviewCountEmp > 0){ alerts.push(r.name + " — " + reviewCountEmp + " بصمة تحتاج مراجعة (بيانات دخول/خروج ناقصة)"); }
 
                         empResults.push({
-                            name: emp.name, code: emp.code, branch: emp.branch,
+                            name: r.name, code: r.code, branch: r.branch,
                             salary: salary, present: presentDays, absent: absentDays,
                             deduct: Math.round(lateDeduct), ot: Math.round(otAmount),
                             loans: Math.round(loans), leaveD: Math.round(leaveDeduct),
