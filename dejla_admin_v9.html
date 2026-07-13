@@ -1050,6 +1050,14 @@
                 <div id="salReportContent" style="margin-top:14px;"></div>
             </div>
         </div>
+
+        <!-- تصحيح البصمات الناقصة/المكررة -->
+        <div class="modal" id="fixAttModal" onclick="if(event.target===this)closeFixAttModal()">
+            <div class="mbox">
+                <div class="mtitle">&#9888; تصحيح بصمات <span id="fixAttEmpName" style="color:var(--m);font-size:.75rem;"></span> <button class="mclose" onclick="closeFixAttModal()">✕</button></div>
+                <div id="fixAttContent" style="margin-top:10px;"></div>
+            </div>
+        </div>
         
         <!-- WELCOME WHATSAPP MODAL -->
         <div class="pmodal" id="welcomeModal">
@@ -1743,6 +1751,68 @@
                 document.getElementById("salModal").classList.add("show");
             }
             function closeSalModal() { document.getElementById("salModal").classList.remove("show"); salEmpCode = null; }
+
+            // ══════════════════════════════════════════════════════════
+            // تصحيح البصمات الناقصة/المكررة — بيديك تسجل وقت انصراف لموظف
+            // نسي يدوس "انصراف"، أو تصحح بصمة اتسجلت غلط (دخول=خروج).
+            // بعد التصحيح، المرتب بيتحسب صح تلقائي في المرة الجاية (كل
+            // الحساب سيرفر-محور دلوقتي، مفيش حاجة تانية محتاجة تتعمل)
+            // ══════════════════════════════════════════════════════════
+            var _fixAttCode = null, _fixAttMonth = null;
+            function openFixAttModal(code, name, month) {
+                _fixAttCode = code; _fixAttMonth = month;
+                document.getElementById("fixAttEmpName").textContent = "— " + name;
+                document.getElementById("fixAttModal").classList.add("show");
+                loadFixAttList();
+            }
+            function closeFixAttModal() {
+                document.getElementById("fixAttModal").classList.remove("show");
+                _fixAttCode = null; _fixAttMonth = null;
+            }
+            function loadFixAttList() {
+                var box = document.getElementById("fixAttContent");
+                box.innerHTML = ldHTML();
+                fetch(URL + "?action=getSalaryReport&code=" + encodeURIComponent(_fixAttCode) + "&month=" + encodeURIComponent(_fixAttMonth))
+                .then(function(r){ return r.json(); }).then(function(d) {
+                    if (d.error) { box.innerHTML = '<div class="empty">' + d.error + '</div>'; return; }
+                    var items = (d.details || []).filter(function(det){ return det.needsReview; });
+                    if (!items.length) {
+                        box.innerHTML = "<div class='pending-empty'>&#10003; مفيش بصمات محتاجة مراجعة للشهر ده</div>";
+                        return;
+                    }
+                    var h = "";
+                    items.forEach(function(det, idx){
+                        var isDuplicate = det.out !== "--"; // دخول وخروج بنفس التوقيت = مكررة، غير كده = ناقصة الانصراف
+                        var dobj = new Date(det.date);
+                        var dlbl = _dNames[dobj.getDay()] + " " + dobj.getDate() + " " + _mNames[dobj.getMonth()];
+                        h += "<div class='card' style='padding:12px;margin-bottom:10px;'>";
+                        h += "<div style='font-weight:800;font-size:.82rem;margin-bottom:4px;'>&#128197; " + dlbl + "</div>";
+                        h += "<div style='font-size:.72rem;color:var(--m);margin-bottom:8px;'>" + esc(det.branch) + " &bull; " + esc(det.shift) + " &bull; دخول: " + det.in + "</div>";
+                        h += "<div style='font-size:.72rem;color:var(--r);margin-bottom:8px;'>" + (isDuplicate ? "&#9888; الدخول والانصراف اتسجلوا بنفس التوقيت (بصمة غلط)" : "&#9888; مفيش انصراف متسجل خالص") + "</div>";
+                        h += "<div style='display:flex;gap:8px;align-items:center;'>";
+                        h += "<input type='time' id='fixAttTime" + idx + "' style='flex:1;padding:8px;border:2px solid var(--b3);border-radius:8px;font-family:Cairo,sans-serif;'/>";
+                        h += "<button class='btn bng' style='width:auto;padding:8px 16px;' data-idx='" + idx + "' data-date='" + esc(det.date) + "' data-shift='" + esc(det.shift) + "' data-branch='" + esc(det.branch) + "' data-dup='" + (isDuplicate?"1":"0") + "' onclick='submitFixAtt(this)'>تسجيل</button>";
+                        h += "</div></div>";
+                    });
+                    box.innerHTML = h;
+                }).catch(function(){ box.innerHTML = '<div class="empty">تعذر التحميل</div>'; });
+            }
+            function submitFixAtt(btn) {
+                var idx = btn.dataset.idx;
+                var timeVal = document.getElementById("fixAttTime" + idx).value;
+                if (!timeVal) { toast("!", "اختار الوقت الأول", ""); return; }
+                btn.disabled = true; btn.textContent = "جاري...";
+                fetch(URL, {method:"POST", mode:"no-cors", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
+                    action:"fixAttendanceRecord",
+                    code:_fixAttCode, name:document.getElementById("fixAttEmpName").textContent.replace("— ",""),
+                    date:btn.dataset.date, shift:btn.dataset.shift, branch:btn.dataset.branch,
+                    time:timeVal, mode: btn.dataset.dup==="1" ? "fixDuplicate" : "addCheckout"
+                })}).then(function(){
+                    toast("✅", "تم التصحيح", "");
+                    setTimeout(loadFixAttList, 1200);
+                }).catch(function(){ btn.disabled=false; btn.textContent="تسجيل"; toast("!", "حدث خطأ", ""); });
+            }
+
             function loadSalaryReport() {
                 if (!salEmpCode) return;
                 var month = document.getElementById("salMonth").value;
@@ -1916,7 +1986,7 @@
                         h += "<tr>";
                         var badges = "";
                         if (e.pending > 0) badges += "<span class='shift-tag-pending' style='margin-right:4px;'>&#9203; معلّق " + e.pending + " ج.م</span>";
-                        if (e.review > 0) badges += "<span class='shift-tag-review'>&#9888; " + e.review + " يحتاج مراجعة</span>";
+                        if (e.review > 0) badges += "<button type='button' class='shift-tag-review' style='border:none;cursor:pointer;font-family:Cairo,sans-serif;' data-code=\"" + esc(e.code) + "\" data-name=\"" + esc(e.name) + "\" data-month=\"" + esc(month) + "\" onclick=\"openFixAttModal(this.dataset.code,this.dataset.name,this.dataset.month)\">&#9888; " + e.review + " يحتاج مراجعة — اضغط للتصحيح</button>";
                         h += "<td class='td-name'>" + esc(e.name) + "<br><span style='font-size:.65rem;color:var(--m);'>" + esc(e.branch) + "</span>" + (badges?"<br>"+badges:"") + "</td>";
                         h += "<td>" + e.present + "</td>";
                         h += "<td style='color:var(--r);'>" + e.absent + "</td>";
