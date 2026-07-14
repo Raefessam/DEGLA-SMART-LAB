@@ -1116,7 +1116,7 @@
                 <div class="tc">
                     <h2>Degla Smart Lab</h2>
                     <small id="dt"></small>
-                    <div style="font-size:.6rem;color:var(--m);opacity:.6;margin-top:2px;">إصدار الأدمن: v2026-07-14-2</div>
+                    <div style="font-size:.6rem;color:var(--m);opacity:.6;margin-top:2px;">إصدار الأدمن: v2026-07-14-4</div>
                 </div>
                 <button class="xbtn" onclick="lo()">خروج</button>
             </div>
@@ -1545,20 +1545,26 @@
                         if (!r.name) return;
                         var act = r.action || "";
                         if (act !== "حضور" && act !== "انصراف") return;
-                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,shift:r.shift,inn:null,out:null,innT:"--",outT:"--",lateTxt:"",otTxt:""};
+                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,inn:null,out:null,innT:"--",outT:"--",innShift:"",outShift:"",lateTxt:"",otTxt:""};
                         map[r.name].branch = r.branch || map[r.name].branch;
-                        map[r.name].shift  = r.shift  || map[r.name].shift;
+                        // ✅ إصلاح: بنسجّل شيفت الدخول وشيفت الخروج لوحدهم — لو
+                        // فيه تضارب بين قيمة الشيفت المسجّلة وقت الدخول ووقت
+                        // الخروج لنفس الموظف (بيانات غير متسقة)، كل شارة تتحسب
+                        // بشيفتها الصح بدل ما شارة الاتنين تتلخبط بقيمة واحدة
                         if (act === "حضور" && !map[r.name].inn) {
                             map[r.name].inn = r.time; map[r.name].innT = (r.time||"").slice(0,5);
+                            map[r.name].innShift = r.shift || "";
                         }
                         if (act === "انصراف") {
                             map[r.name].out = r.time; map[r.name].outT = (r.time||"").slice(0,5);
+                            map[r.name].outShift = r.shift || "";
                         }
                     });
                     Object.values(map).forEach(function(e){
-                        var badges = computeLiveTimingBadges(e.branch, e.shift, e.innT!=="--"?e.innT:null, e.outT!=="--"?e.outT:null);
-                        e.lateTxt = badges.lateTxt;
-                        e.otTxt = badges.otTxt;
+                        var lateBadges = computeLiveTimingBadges(e.branch, e.innShift, e.innT!=="--"?e.innT:null, null);
+                        var otBadges = computeLiveTimingBadges(e.branch, e.outShift || e.innShift, null, e.outT!=="--"?e.outT:null);
+                        e.lateTxt = lateBadges.lateTxt;
+                        e.otTxt = otBadges.otTxt;
                     });
                     lastCount = recs.length;
                     var list = Object.values(map);
@@ -2150,8 +2156,8 @@
                         var dlbl = _dNames[dobj.getDay()] + " " + dobj.getDate() + " " + _mNames[dobj.getMonth()];
                         h += "<div class='pending-card" + (warn?" warn":"") + "'>";
                         h += "<div class='pending-card-head'><span class='pending-card-name'>" + esc(r.name) + "</span><span class='pending-card-amt'>-" + Math.round(r.amount) + " ج.م</span></div>";
-                        h += "<div class='pending-card-date'>&#128197; " + dlbl + " &bull; " + (r.branch||"") + " &bull; " + r.shift + "</div>";
-                        h += "<div class='pending-card-meta'>" + r.label + "</div>";
+                        h += "<div class='pending-card-date'>&#128197; " + dlbl + " &bull; " + esc(r.branch||"") + " &bull; " + esc(r.shift) + "</div>";
+                        h += "<div class='pending-card-meta'>" + esc(r.label) + "</div>";
                         h += "<div class='pending-card-exp' style='color:" + (warn?"#e65100":"var(--m)") + ";'>" + (daysLeft>0 ? "&#9203; هينتهي تلقائيًا خلال " + daysLeft + " يوم" : "&#9203; هينتهي قريب جدًا") + "</div>";
                         h += "<div class='pending-card-btns'>";
                         h += "<button class='pb-activate' onclick=\"decidePendingUI('" + r.id + "','activated')\">&#9989; فعّل الخصم</button>";
