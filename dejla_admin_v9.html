@@ -1116,6 +1116,7 @@
                 <div class="tc">
                     <h2>Degla Smart Lab</h2>
                     <small id="dt"></small>
+                    <div style="font-size:.6rem;color:var(--m);opacity:.6;margin-top:2px;">إصدار الأدمن: v2026-07-14-2</div>
                 </div>
                 <button class="xbtn" onclick="lo()">خروج</button>
             </div>
@@ -1510,6 +1511,29 @@
                 return '<div class="ldots"><span class="ld"></span><span class="ld" style="animation-delay:.2s"></span><span class="ld" style="animation-delay:.4s"></span></div>';
             }
 
+            // ✅ بيحسب شارة التأخير/الأوفر تايم مباشرة من وقت الدخول/الخروج
+            // الخام وجدول الشيفتات الحالي (SHIFT_TIMES من السيرفر، أو
+            // DEFAULT_SHIFT_TIMES احتياطيًا) — بدل ما يثق في النص المخزّن
+            // وقت البصمة، اللي ممكن يكون اتسجل غلط بنسخة أتندانس قديمة.
+            // كده الداشبورد دايمًا صح بغض النظر عن أي مشكلة تسجيل تاريخية.
+            function computeLiveTimingBadges(branch, shift, checkInTime, checkOutTime) {
+                var src = (typeof SHIFT_TIMES !== "undefined" && SHIFT_TIMES) || DEFAULT_SHIFT_TIMES;
+                var times = (src[branch] && src[branch][shift]) ? src[branch][shift] : null;
+                var out = { lateTxt: "", otTxt: "" };
+                if (!times) return out;
+                var toM = function(t){ var p=(t||"").split(":"); return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0); };
+                var shiftStart = toM(times.start), shiftEnd = toM(times.end);
+                if (checkInTime) {
+                    var lateBy = toM(checkInTime) - shiftStart;
+                    if (lateBy >= 1) out.lateTxt = "تأخير " + lateBy + " دقيقة";
+                }
+                if (checkOutTime) {
+                    var otBy = toM(checkOutTime) - shiftEnd - 15;
+                    if (otBy > 0) out.otTxt = "أوفر تايم " + otBy + " دقيقة";
+                }
+                return out;
+            }
+
             // HOME
             function loadH() {
                 document.getElementById("homeBranches").innerHTML = ldHTML();
@@ -1521,15 +1545,20 @@
                         if (!r.name) return;
                         var act = r.action || "";
                         if (act !== "حضور" && act !== "انصراف") return;
-                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,inn:null,out:null,innT:"--",outT:"--",lateTxt:"",otTxt:""};
+                        if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,shift:r.shift,inn:null,out:null,innT:"--",outT:"--",lateTxt:"",otTxt:""};
+                        map[r.name].branch = r.branch || map[r.name].branch;
+                        map[r.name].shift  = r.shift  || map[r.name].shift;
                         if (act === "حضور" && !map[r.name].inn) {
                             map[r.name].inn = r.time; map[r.name].innT = (r.time||"").slice(0,5);
-                            if (r.timing && r.timing.indexOf("تأخير")>=0) map[r.name].lateTxt = r.timing;
                         }
                         if (act === "انصراف") {
                             map[r.name].out = r.time; map[r.name].outT = (r.time||"").slice(0,5);
-                            if (r.timing && r.timing.indexOf("أوفر")>=0) map[r.name].otTxt = r.timing;
                         }
+                    });
+                    Object.values(map).forEach(function(e){
+                        var badges = computeLiveTimingBadges(e.branch, e.shift, e.innT!=="--"?e.innT:null, e.outT!=="--"?e.outT:null);
+                        e.lateTxt = badges.lateTxt;
+                        e.otTxt = badges.otTxt;
                     });
                     lastCount = recs.length;
                     var list = Object.values(map);
@@ -2264,6 +2293,31 @@
                 });
             }
 
+            // ✅ نفس مبدأ الداشبورد: بيحسب نص التأخير/الأوفر تايم لسجل واحد
+            // (بصمة دخول أو خروج) مباشرة من وقتها الخام + جدول الشيفتات
+            // الحالي، بدل ما يعرض النص المخزّن وقت البصمة اللي ممكن يكون
+            // اتسجل بنسخة أتندانس قديمة فيها باگ
+            function computeLiveRecordLabel(r) {
+                var src = (typeof SHIFT_TIMES !== "undefined" && SHIFT_TIMES) || DEFAULT_SHIFT_TIMES;
+                var times = (src[r.branch] && src[r.branch][r.shift]) ? src[r.branch][r.shift] : null;
+                if (!times || !r.time) return "";
+                var toM = function(t){ var p=(t||"").split(":"); return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0); };
+                var mins = toM((r.time||"").slice(0,5));
+                if (r.action === "حضور") {
+                    var lateBy = mins - toM(times.start);
+                    if (lateBy >= 1) return "تأخير " + lateBy + " دقيقة";
+                    if (lateBy <= -1) return "تقدم " + Math.abs(lateBy) + " دقيقة";
+                    return "في الموعد";
+                }
+                if (r.action === "انصراف") {
+                    var otBy = mins - toM(times.end) - 15;
+                    if (otBy > 0) return "أوفر تايم " + otBy + " دقيقة";
+                    var earlyBy = toM(times.end) - mins;
+                    if (earlyBy > 0) return "انصراف مبكر " + earlyBy + " دقيقة — خصم الساعات الناقصة";
+                    return "انصراف في الموعد";
+                }
+                return "";
+            }
             function renderAtt(dateFilter) {
                 var today = new Date().toLocaleDateString("en-CA");
                 var recs = dateFilter ? allAttRecs.filter(function(r) { return r.date === dateFilter; }) : allAttRecs;
@@ -2296,7 +2350,8 @@
                     var bdgClass = isIn ? "bg" : "br2";
                     html += '<div class="li">';
                     html += '<div class="av" style="' + avStyle + '">' + avIcon + '</div>';
-                    html += '<div class="lb"><div class="ln">' + esc(r.name) + '</div><div class="ls">' + esc(r.branch) + (r.timing ? " · " + esc(r.timing) : "") + '</div></div>';
+                    var liveLabel = computeLiveRecordLabel(r);
+                    html += '<div class="lb"><div class="ln">' + esc(r.name) + '</div><div class="ls">' + esc(r.branch) + (liveLabel ? " · " + esc(liveLabel) : "") + '</div></div>';
                     html += '<div class="lr"><span class="badge ' + bdgClass + '">' + r.action + '</span>';
                     html += '<div style="font-size:.66rem;color:var(--m);margin-top:3px;">' + r.date + ' ' + (r.time||"").slice(0,5) + '</div></div></div>';
                 });
