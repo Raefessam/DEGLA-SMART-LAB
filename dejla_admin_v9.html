@@ -1116,7 +1116,7 @@
                 <div class="tc">
                     <h2>Degla Smart Lab</h2>
                     <small id="dt"></small>
-                    <div style="font-size:.6rem;color:var(--m);opacity:.6;margin-top:2px;">إصدار الأدمن: v2026-07-14-4</div>
+                    <div style="font-size:.6rem;color:var(--m);opacity:.6;margin-top:2px;">إصدار الأدمن: v2026-07-14-5</div>
                 </div>
                 <button class="xbtn" onclick="lo()">خروج</button>
             </div>
@@ -1528,8 +1528,16 @@
                     if (lateBy >= 1) out.lateTxt = "تأخير " + lateBy + " دقيقة";
                 }
                 if (checkOutTime) {
-                    var otBy = toM(checkOutTime) - shiftEnd - 15;
-                    if (otBy > 0) out.otTxt = "أوفر تايم " + otBy + " دقيقة";
+                    var outMins = toM(checkOutTime);
+                    var otBy = outMins - shiftEnd - 15;
+                    if (otBy > 0) {
+                        out.otTxt = "أوفر تايم " + otBy + " دقيقة";
+                    } else if (outMins < shiftEnd) {
+                        // ✅ إصلاح: كانت الشارة دي ناقصة هنا بالكامل — كانت
+                        // موجودة في شاشة "سجل الحضور" بس مش في الداشبورد،
+                        // فكانت الشاشتين بيوروا معلومة مختلفة لنفس البصمة
+                        out.otTxt = "انصراف مبكر " + (shiftEnd - outMins) + " دقيقة";
+                    }
                 }
                 return out;
             }
@@ -1547,13 +1555,15 @@
                         if (act !== "حضور" && act !== "انصراف") return;
                         if (!map[r.name]) map[r.name] = {name:r.name,branch:r.branch,inn:null,out:null,innT:"--",outT:"--",innShift:"",outShift:"",lateTxt:"",otTxt:""};
                         map[r.name].branch = r.branch || map[r.name].branch;
-                        // ✅ إصلاح: بنسجّل شيفت الدخول وشيفت الخروج لوحدهم — لو
-                        // فيه تضارب بين قيمة الشيفت المسجّلة وقت الدخول ووقت
-                        // الخروج لنفس الموظف (بيانات غير متسقة)، كل شارة تتحسب
-                        // بشيفتها الصح بدل ما شارة الاتنين تتلخبط بقيمة واحدة
-                        if (act === "حضور" && !map[r.name].inn) {
+                        // ✅ إصلاح: كنا بنسجّل بس أول "حضور" في اليوم ونتجاهل أي
+                        // بصمة دخول تانية بعد كده (لو موظف رجع بصم تاني بعد ما
+                        // انصرف — شيفت تاني أو تصحيح). دلوقتي كل "حضور" بيبدأ
+                        // دورة جديدة (وبيصفّر بيانات الانصراف القديمة)، عشان
+                        // الداشبورد يعكس آخر حالة فعلية للموظف مش أول حركة بس
+                        if (act === "حضور") {
                             map[r.name].inn = r.time; map[r.name].innT = (r.time||"").slice(0,5);
                             map[r.name].innShift = r.shift || "";
+                            map[r.name].out = null; map[r.name].outT = "--"; map[r.name].outShift = "";
                         }
                         if (act === "انصراف") {
                             map[r.name].out = r.time; map[r.name].outT = (r.time||"").slice(0,5);
